@@ -1,0 +1,3 @@
+Third Prize|100|y|10
+Second Prize|50|y|10
+First Prize|10|Y|1

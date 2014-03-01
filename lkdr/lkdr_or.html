@@ -1,0 +1,304 @@
+<html>
+<head>
+<style style="text/css">
+body{
+  margin:0 auto;
+}
+
+/*page layout div*/
+.divfrm{
+  text-align:center;
+  float: center;
+  width: 100%;
+  height:600px;
+}
+.divhdr{
+  height:50px;
+  /*
+  background-image: url(hbg.jpg);
+  background-repeat: no-repeat;
+  */
+}
+.divmain{
+  float: center;
+  height: 667px;
+  width: 1000px;
+  vertical-align: middle;
+  background-image: url(mbg.jpg);
+  background-repeat: no-repeat;
+}
+.divdbgPane{
+  float: bottom;
+  background-color:gray;
+  height:0;
+  width: 100%;
+  display: none;
+  text-align:left;
+}
+.divlst{
+  height:80%;
+  overflow-y: scroll;
+}
+.divfootr{
+  clear:both;
+  height:55px;
+  /*
+  background-image: url(fbg.jpg);
+  background-color:gray;
+  background-repeat: no-repeat;
+  font-size: 40%
+  */
+}
+/*drawer display CSS*/
+.drawerPane{
+  background-color:white;
+  color:black;
+  border-style: outset;
+  border-width: thin;
+  font: bold 30px MS Sans;
+  width: 320;
+  text-align: left;
+}
+.drawerPaneL{
+  background-color:white;
+  color:black;
+  border-style: outset;
+  font: bold 60px MS Sans;
+  width: 640;
+  text-align: left;
+}
+.tbDraw{
+  height:"80%";
+  valign:center;
+}
+.divDraw{
+}
+.divPrSt{
+  float: left;
+  border-style: outset;
+  font: bold 20px MS Sans;
+  text-align: left;
+}
+.notestyle{
+  font: italic 8px Dotum;
+}
+</style>
+<script type="text/javascript" src="lkdr_class.js"></script>
+<script type="text/javascript">
+  //init page-wide globals
+  var lkdr = new Luckdraw();
+  lkdr.loadPoolFile("pool.csv");
+  lkdr.loadPrizeFile("prize.txt");
+  var toStopRoll = true;
+  var dspl = [];
+  var drlst = [];
+  var outlst = [];
+  var curP = "";
+</script>
+
+<script type="text/javascript">
+function reloadConf() {
+  lkdr.loadPoolFile("pool.csv");
+  lkdr.loadPrizeFile("prize.txt");
+  prizeWinLstBtn();
+  curPrizeBtn();
+  dspPrSt();
+}
+
+function showHidedbgPane(){
+  var dbgP = document.getElementById('divdbgPane');
+  var bd = document.getElementById('btnDspdbgPane');
+  if (dbgP.style.display == 'none' || dbgP.style.display == ''){
+    dbgP.style.display='block';
+    dbgP.style.height='200';
+    bd.value = "debug<<";
+  }else{
+    dbgP.style.display='none';
+    dbgP.style.height='0';
+    bd.value = "debug>>";
+  }
+}
+
+function dspPrSt(){
+  var divdsp = document.getElementById("divPrSt");
+  var htm = "";
+  for (var i in lkdr.winLst.items) {
+    htm += "[[" + i + ": " + lkdr.winLst.getItem(i).length + "]] ";
+  }
+  divdsp.innerHTML = htm;
+}
+
+function clrDrDsp(){
+  for (var i=0;i<dspl.length;i++) {
+    dspl.innerHTML = curP;
+  }
+}
+
+function chkAck() {
+  if (outlst.length > 0) {
+    var c = confirm("Acknowledge displayed winner before proceed?");
+    if (c) {
+        ack();
+        alert("displayed winner(s) added!");
+    } else {
+      outlst = [];
+    }
+  }
+}
+
+function swCurP(p){
+  chkAck();
+  curP = p;
+  drawDsp(lkdr.prizeLst.getItem(curP).batch, p);
+}
+
+function drawDsp(b, s){
+  var divdsp = document.getElementById("drawerDsp");
+  var htm = "";
+  var c = "drawerPane";
+  if (b <= 5) c = "drawerPaneL";
+  for (var i=0;i<b;i++) {
+    htm += "<span class='" + c + "' id='dsp" + i + "'>" + s + "</span><br>";
+  }
+  divdsp.innerHTML = htm;
+  dspl = [];
+  for (var i=0;i<b;i++) {
+    dspl.push(document.getElementById("dsp"+i));
+  }
+  dspPrSt();
+  document.ctrl.btnSta.focus();
+}
+
+function prizeWinLstBtn(){
+  var btnhtm = "<input type='button' value='all' onclick='javascript: lkdr.dspWin(";
+  btnhtm += '"ldsp")' + "'>";
+  for (var p in lkdr.prizeLst.items){
+    btnhtm += "<input type='button' value='" + p + "' onclick='javascript: lkdr.dspWin(";
+    btnhtm += '"ldsp", "' + p + '")' + "'>";
+  }
+  document.getElementById("divWinBtn").innerHTML = btnhtm;
+  btnhtm = "<input type='button' value='cl all' onclick='javascript: lkdr.clearWin(); dspPrSt();'>";
+  for (var p in lkdr.prizeLst.items){
+    btnhtm += "<input type='button' value='cl " + p + "' onclick='javascript: lkdr.clearWin(";
+    btnhtm += '"' + p + '")' + "; dspPrSt();'>";
+  }
+  document.getElementById("divClWinBtn").innerHTML = btnhtm;
+}
+
+function curPrizeBtn(){
+  var btnhtm = "";
+  for (var p in lkdr.prizeLst.items){
+    btnhtm += "<input type='button' value='" + p + "' onclick='javascript: swCurP(";
+    btnhtm += '"' + p + '")' + "'>";
+  }
+  document.getElementById("divCurPBtn").innerHTML = btnhtm;
+}
+
+function stopRoll(){
+  toStopRoll = true;
+  document.ctrl.btnAck.disabled = false;
+  document.ctrl.btnSta.disabled = false;
+  document.ctrl.btnStp.disabled = true;
+  document.getElementById("divCurPBtn").disabled = false;
+  outlst = lkdr.draw(curP, dspl.length);
+  dspRoll(outlst);
+  document.ctrl.btnAck.focus();
+  return;
+}
+
+function startRoll(){
+  chkAck();
+  var n = dspl.length;
+  if (!lkdr.validDraw(curP, n)) return;
+  drlst = lkdr.getPool(curP);
+  toStopRoll = false;
+  document.ctrl.btnStp.disabled = false;
+  document.ctrl.btnSta.disabled = true;
+  document.getElementById("divCurPBtn").disabled = true;
+  roll();
+  document.ctrl.btnStp.focus();
+  return;
+}
+
+// display draw result on page
+function dspRoll(l) {
+  for(var i=0;i<dspl.length;i++) {
+    dspl[i].innerHTML = l[i] + ": " + lkdr.drpool.getItem(l[i]);
+  }
+}
+
+function roll() {
+  if (toStopRoll) return;
+  var len = drlst.length;
+  for(var i=0;i<dspl.length;i++) {
+    var randIdx = (Math.floor(Math.random()*len));
+    var k = drlst[randIdx];
+    dspl[i].innerHTML = k + ": " + lkdr.drpool.getItem(k);
+  }
+  // refresh every 5 ms
+  setTimeout(roll, 5);
+  return;
+}
+
+// acknowledge current displayed winner, add then to winner list
+function ack(){
+  document.ctrl.btnAck.disabled = true;
+  lkdr.addWin(curP, outlst);
+  lkdr.saveWinFile("win.txt");
+  outlst = [];
+  dspPrSt();
+  document.ctrl.btnSta.focus();
+}
+</script>
+</head>
+<body>
+
+<div id="divfrm" class="divfrm">
+  <div id="divhdr" class="divhdr">
+  </div>
+
+  <div id="divmain" class="divmain">
+    <br><div id="divCurPBtn"></div>
+    <table class="tbDraw"><tr><td>
+    <div id="drawerDsp" class="divDraw"></div>
+    </td></tr></table>
+    <form name="ctrl">
+    <input type="button" name="btnSta" onclick="javascript: startRoll()" value="Start">
+    <input type="button" disabled=True name="btnStp" onclick="javascript: stopRoll()" value="Stop">
+    <input type="button" disabled=True name="btnAck" onclick="javascript: ack()" value="Acknowledge">
+    </form>
+  </div>
+
+  <div id="divfootr" class="divfootr">
+    <div id="divPrSt" class="divPrSt"></div>
+  </div>
+</div>
+
+
+<hr>
+
+<div class="notestyle" align="right">
+  <span>report bug to Leo.Wang@alcatel-lucent.com</span>
+  <input type="button" value="debug>>" id="btnDspdbgPane" onclick="javascript: showHidedbgPane();">
+</div>
+<div id="divdbgPane" class="divdbgPane">
+  <div>
+    <input type="button" name="btnPoolD" onclick="javascript: lkdr.dumpPool('ldsp');" value="Pool">
+    <input type="button" name="btnPrizeD" onclick="javascript: lkdr.dumpPrize('ldsp');" value="Prize">
+    <input type="button" value="Save winner" onclick="javascript: lkdr.saveWinFile('win.txt');">
+    <input type="button" value="reConf" onclick="javascript: reloadConf();">
+    <input type="button" value="getPool" onclick="javascript: document.getElementById('ldsp').innerHTML=lkdr.getPool(curP).join('<br>');">
+    <input type="button" value="loadWin" onclick="javascript: lkdr.loadWinFile('win.txt'); dspPrSt();">
+    <input type="button" value="clear" onclick="javascript: document.getElementById('ldsp').innerHTML = ''">
+  </div>
+  <div id="divClWinBtn"></div>
+  <div id="divWinBtn"></div>
+  <div id="ldsp" class="divlst"></div>
+</div>
+</body>
+<script type="text/javascript">
+  prizeWinLstBtn();
+  curPrizeBtn();
+  dspPrSt();
+</script>
+</html>

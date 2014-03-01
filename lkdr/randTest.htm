@@ -1,0 +1,33 @@
+<html>
+<head>
+<script type="text/javascript">
+//init array to draw from
+var drlst = []
+for (var i=0;i<100;i++){
+	drlst.push(0);
+}
+
+function draw(n){
+	for (var i=0;i<n;i++) {
+		var randIdx = (Math.floor(Math.random()*drlst.length));
+		drlst[randIdx] += 1;
+	}
+}
+
+function st(){
+	draw(document.getElementById("drn").value);
+	htm = "<ul>";
+	for (var i=0;i<drlst.length;i++) {
+		htm += "<li>" + i + ": " + drlst[i] + "</li>";
+	}
+	document.getElementById("drawerDsp").innerHTML = htm;
+}
+
+</script>
+</head>
+<body>
+<input type="button" onclick="javascript: st();" value="statistic">
+<input type="text" id="drn" value="100000">
+<div id="drawerDsp"></div>
+</body>
+</html>
