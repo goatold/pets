@@ -363,12 +363,13 @@ Class quizController extends CController{
 		$t = $this->md->dbRead(array('title'), 'id=' . $qid);
 		$t = $t[0]['title'];
 		$states = $this->md->dbReadState($qid, $pid);
-		global $dirbase, $urlbase, $adminEmail;
+		global $dirbase, $urlbase, $adminName, $adminEmail;
 		require($dirbase . 'app/emailer.php');
 		// compose email
 		$url = $urlbase . '/quiz/take/?id=' . $qid . '&pid=%d&token=%s';
-		$msg = '<h1>Machine generated email. Do NOT reply.' . 
-		       'Click <a href="%s">here</a> if msg not showing up properly.' .
+		$msg = '<h1>Machine generated email. Do NOT reply. <br>' . 
+		       'To submit answers, please view this message in a web browser or Click <a href="%s">here</a>. <br>' .
+		       'Contact ' . $adminName . ' (' . $adminEmail . ') for further assistance.' .
 		       '</h1><hr>';
 		$args = array('from' => $adminEmail,
 	                  'subject' => "EQuiz: " . $t,

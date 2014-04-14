@@ -13,8 +13,8 @@
 * emailer.php 2010-09-20 leow
 */
 Class EmailHelper {
-	protected $args = array('to' => "leo.wang@alcatel-lucent.com",
-	                        'from' => "leo.wang@alcatel-lucent.com",
+	protected $args = array('to' => null,
+	                        'from' => null,
 	                        'subject' => "EmailHelper test",
 	                        'message' => "EmailHelper test",
 	                        'headers' => "MIME-Version: 1.0\r\nContent-type: text/html; charset=UTF-8\r\n",
@@ -38,6 +38,8 @@ Class EmailHelper {
 			if(!isset($args[$k])) {$args[$k] = $this->args[$k];}
 		}
 		$headers = $args['headers']."From: ".$args['from']."\r\n";
+		$headers = $args['headers']."Reply-To: ".$args['from']."\r\n";
+		$headers = $args['headers']."Return-Path: ".$args['from']."\r\n";
 		//options to send to cc+bcc
 		if(isset($args['cc'])) { $headers .= "Cc: ".$args['cc']."\r\n"; }
 		if(isset($args['bcc'])) { $headers .= "Bcc: ".$args['bcc']."\r\n"; }

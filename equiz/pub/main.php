@@ -23,8 +23,10 @@ $dbfile = 'sqlite:' . $dirbase . 'data/equiz_sqlite3.db';
 $jqfile = $urlbase . '/../js/jq1.4.2.min.js';
 $reqStr = substr($_SERVER['REQUEST_URI'], strlen($_SERVER['SCRIPT_NAME']));
 $adminLogin = 'admin';
-$adminPass = 'd0be2dc421be4fcd0172e5afceea3970e2f3d940';
-$adminEmail = 'leo.wang@alcatel-lucent.com';
+$adminPass = 'ef0ebbb77298e1fbd81f756a4efc35b977c93dae';
+#$adminPass = 'd0be2dc421be4fcd0172e5afceea3970e2f3d940';
+$adminEmail = 'paul.sun@alcatel-lucent.com';
+$adminName  = 'Paul Sun';
 require($dirbase . 'app/controllers.php');
 require($dirbase . 'app/models.php');
 
