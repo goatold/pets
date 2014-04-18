@@ -1,9 +1,9 @@
 <?php
-global $jqfile, $urlbase;
+global $jqfile, $urlbase, $adminEmail;
 ?>
 
 <html><head>
-<STYLE type="text/css">
+<STYLE type="text/css" >
 .whitebg {
 background-color: white;
 }
@@ -146,6 +146,8 @@ foreach ($questions as $q) {
 		}
 		$str .= $lsec;
 		echo sprintf($htm_q_bf, $q['ID'], $str);
+	} elseif ($q['Type'] == 4) {
+		echo "<div>" . $q['Body'] . "</div>";
 	}
 }
 ?>
@@ -159,7 +161,7 @@ foreach ($questions as $q) {
 </div>
 <hr>
 <div class="info">
-Computer generated form.
+From <?php echo $adminEmail;?>
 </div>
 
 <script language="JavaScript">

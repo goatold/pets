@@ -131,10 +131,38 @@ Class Question_bf extends Question {
 		return $sub.self::Q_SEP;
 	}
 }
+// This is not used for now
+Class Question_pt extends Question {
+	public function genHtml($ans=False) {
+		return "<div>" . this->$body . "</div>";
+	}
+
+	public function readForm($f) {
+		return "";
+	}
+	// TODO: change db query to get body only
+	public function dbLoad($db) {
+		try {
+			$rc = $db->dbq_question($this->id);
+			if (!$rc || count($rc) != 1) {return False;}
+			$dbq = $rc->fetch(PDO::FETCH_ASSOC);
+			$this->body = $dbq['body'];
+		}
+		catch (Exception $e) {
+	        echo "load question from db failed\n" . $e->getMessage();
+	        return False;
+	    }
+	}
+
+	public function chkAns($a) {
+		return true;
+	}
+}
 
 $QTYPE_CLASS = array(1=>'Question_sc',
                      2=>'Question_mc',
-                     3=>'Question_bf'
+                     3=>'Question_bf',
+                     4=>'Question_pt'
                      );
 Class Quiz {
 	protected $id = NULL;
@@ -224,4 +252,4 @@ Class Quiz {
 	}
 }
 
-?>
+?e

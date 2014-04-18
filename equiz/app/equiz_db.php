@@ -81,7 +81,7 @@ Class Equiz_DB {
 
 	public function dbin_submi($qid, $pid, $astr) {
 		$sql = sprintf("insert or replace into Submission (subValue, quizId, pId, subtime) values('%s', %d, %d, CURRENT_TIMESTAMP)",
-		               $astr, $qid, $pid);
+		               SQLite3::escapeString($astr), $qid, $pid);
 		return $this->dbe($sql);
 	}
 

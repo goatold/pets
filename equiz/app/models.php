@@ -105,7 +105,9 @@ class questionModel extends CModel {
 		$sql = sprintf("insert  or replace into Question (id, quizId, seq, type, body, options, answers)
 		                VALUES (%s, %d, %d,  %d, '%s', '%s', '%s');",
 		               $id, $attribs['quizId'], $attribs['seq'], $attribs['type'],
-		               $attribs['body'], $attribs['options'], $attribs['answers']
+		               SQLite3::escapeString($attribs['body']),
+		               SQLite3::escapeString($attribs['options']),
+		               SQLite3::escapeString($attribs['answers'])
 		              );
 		$this->db->dbe($sql);
 	}
@@ -123,7 +125,10 @@ class particpModel extends CModel {
 	public function dbWrite($attribs, $id='NULL') {
 		$sql = sprintf("insert  or replace into PartInfo (id, name, email, tags)
 		                VALUES (%s, '%s', '%s', '%s');",
-		               $id, $attribs['name'], $attribs['email'], $attribs['tags']
+		               $id,
+		               SQLite3::escapeString($attribs['name']),
+		               SQLite3::escapeString($attribs['email']),
+		               SQLite3::escapeString($attribs['tags'])
 		              );
 		$this->db->dbe($sql);
 	}
@@ -144,7 +149,12 @@ class quizModel extends CModel {
 	public function dbWrite($attribs, $id='NULL') {
 		$sql = sprintf("insert or replace into Quiz (id, title, duetime, tags, descrip)
 		                VALUES (%s, '%s', datetime('%s', '-8 hours'), '%s', '%s');",
-		               $id, $attribs['title'], $attribs['duetime'], $attribs['tags'], $attribs['descrip']);
+		               $id,
+		               SQLite3::escapeString($attribs['title']),
+		               $attribs['duetime'],
+		               SQLite3::escapeString($attribs['tags']),
+		               SQLite3::escapeString($attribs['descrip'])
+		              );
 		$this->db->dbe($sql);
 	}
 

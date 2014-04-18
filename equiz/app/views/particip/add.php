@@ -4,7 +4,7 @@ action="<?php echo $urlbase . '/particip/add/'?>">
 <?php
 foreach($vargs as $f=>$v) {
 	$inp = '<input type="text" name="' . $f . '"/>';
-	echo '<tr><td>' . $v['lable'] . '</td><td>' . $inp . '</td></tr>';
+	echo '<tr><td>' . $v['label'] . '</td><td>' . $inp . '</td></tr>';
 }
 ?>
 </table>

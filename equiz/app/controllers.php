@@ -127,6 +127,19 @@ Class questionController extends CController{
 	                         'del' => 'checkAdm',
 	                         'view' => 'checkAdm');
 
+	private $formfields = array('quizId',
+	                            'seq',
+	                            'type',
+	                            'body',
+	                            'options',
+	                            'answers');
+
+	private $typeOptions = array(1 => 'Single Choice',
+	                             2 => 'Multiple Choices',
+	                             3 => 'Bland Filling',
+	                             4 => 'Description Text');
+
+
 	public function __construct() {
 		$this->md = new questionModel();
 	}
@@ -144,19 +157,12 @@ Class questionController extends CController{
 			$this->md->dbWrite($_POST);
 			$this->viewAction();
 		} else {
-			$formfields = array('quizId' => array(),
-			                    'seq' => array(),
-			                    'type' => array(),
-			                    'body' => array(),
-			                    'options' => array(),
-			                    'answers' => array(),
-			                   );
-			foreach(array_keys($formfields) as $f) {
-				$formfields[$f]['lable'] = $this->md->fields[$f];
+			$formdata = array();
+			foreach($this->formfields as $f) {
+				$formdata[$f] = array('label' => $this->md->fields[$f]);
 			}
-			$formfields['body']['ftype'] = 'textarea';
-			$formfields['options']['ftype'] = 'textarea';
-			$this->render('question', 'add', $formfields);
+			$formdata['type']['options'] = $this->typeOptions;
+			$this->render('question', 'add', $formdata);
 		}
 	}
 
@@ -166,23 +172,16 @@ Class questionController extends CController{
 			$this->md->dbWrite($_POST, $_REQUEST['id']);
 			$this->viewAction();
 		} else {
-			$formfields = array('quizId' => array(),
-			                    'seq' => array(),
-			                    'type' => array(),
-			                    'body' => array(),
-			                    'options' => array(),
-			                    'answers' => array(),
-			                   );
-			foreach(array_keys($formfields) as $f) {
-				$formfields[$f]['lable'] = $this->md->fields[$f];
+			$formdata = array();
+			foreach($this->formfields as $f) {
+				$formdata[$f] = array('label' => $this->md->fields[$f]);
 			}
-			$values = $this->md->dbRead(array_keys($formfields), 'id='.$_REQUEST['id']);
-			foreach(array_keys($formfields) as $f) {
-				$formfields[$f]['value'] = $values[0][$f];
+			$values = $this->md->dbRead($this->formfields, 'id='.$_REQUEST['id']);
+			foreach($this->formfields as $f) {
+				$formdata[$f]['value'] = $values[0][$f];
 			}
-			$formfields['body']['ftype'] = 'textarea';
-			$formfields['options']['ftype'] = 'textarea';
-			$this->render('question', 'edit', array('id' => $_REQUEST['id'], 'fields' => $formfields));
+			$formdata['type']['options'] = $this->typeOptions;
+			$this->render('question', 'edit', array('id' => $_REQUEST['id'], 'fields' => $formdata));
 		}
 	}
 }
@@ -256,6 +255,7 @@ Class quizController extends CController{
 		}
 		// check token
 		$eqdb->dbq_vtoken($quiz_id, $_POST['pid'], $_POST['token']) or die('invalid token');
+		// TODO: refactor dbload to retrive Id, Type and Answers only
 		$data = $this->md->dbLoad($quiz_id);
 		$answ = '';
 		foreach ($data['questions'] as $q) {
@@ -282,6 +282,8 @@ Class quizController extends CController{
 					}
 					$sub .= questionModel::OP_SEP;
 				}
+			} else {
+				continue;
 			}
 			$sub = rtrim($sub, questionModel::OP_SEP);
 			$answ .= $sub.questionModel::Q_SEP;
@@ -301,9 +303,9 @@ Class quizController extends CController{
 			                    'descrip' => array()
 			                   );
 			foreach(array_keys($formfields) as $f) {
-				$formfields[$f]['lable'] = $this->md->fields[$f];
+				$formfields[$f]['label'] = $this->md->fields[$f];
 			}
-			$formfields['duetime']['lable'] = 'CloseTime';
+			$formfields['duetime']['label'] = 'CloseTime';
 			$formfields['descrip']['ftype'] = 'textarea';
 			$this->render('quiz', 'add', $formfields);
 		}
@@ -403,11 +405,11 @@ Class quizController extends CController{
 			                    'descrip' => array(),
 			                   );
 			foreach(array_keys($formfields) as $f) {
-				$formfields[$f]['lable'] = $this->md->fields[$f];
+				$formfields[$f]['label'] = $this->md->fields[$f];
 			}
 			$fields = array_keys($formfields);
 			$fields["datetime(duetime, 'localtime')"] = 'duetime';
-			$formfields['duetime'] = array('lable' => 'CloseTime');
+			$formfields['duetime'] = array('label' => 'CloseTime');
 			$values = $this->md->dbRead($fields, 'id='.$_REQUEST['id']);
 			foreach(array_keys($formfields) as $f) {
 				$formfields[$f]['value'] = $values[0][$f];
@@ -455,7 +457,7 @@ Class participController extends CController{
 			                    'tags' => array(),
 			                   );
 			foreach(array_keys($formfields) as $f) {
-				$formfields[$f]['lable'] = $this->md->fields[$f];
+				$formfields[$f]['label'] = $this->md->fields[$f];
 			}
 			$this->render('particip', 'add', $formfields);
 		}
@@ -472,7 +474,7 @@ Class participController extends CController{
 			                    'tags' => array(),
 			                   );
 			foreach(array_keys($formfields) as $f) {
-				$formfields[$f]['lable'] = $this->md->fields[$f];
+				$formfields[$f]['label'] = $this->md->fields[$f];
 			}
 			$values = $this->md->dbRead(array_keys($formfields), 'id='.$_REQUEST['id']);
 			foreach(array_keys($formfields) as $f) {

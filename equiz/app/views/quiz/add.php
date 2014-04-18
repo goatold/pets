@@ -7,7 +7,7 @@ foreach($vargs as $f=>$v) {
 	if (isset($v['ftype']) && $v['ftype'] == 'textarea') {
 		$inp = '<textarea name="' . $f . '"></textarea>';
 	}
-	echo '<tr><td>' . $v['lable'] . '</td><td>' . $inp . '</td></tr>';
+	echo '<tr><td>' . $v['label'] . '</td><td>' . $inp . '</td></tr>';
 }
 ?>
 </table>
