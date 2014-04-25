@@ -11,6 +11,7 @@
 *
 * main.php 2010-10-14 leow
 * equiz web app main
+* 2014-04-23 leow move default settings to settings.php
 */
 
 define('DEV_ENV', true);
@@ -22,11 +23,7 @@ $urlbase = 'http://' . $_SERVER['HTTP_HOST'] . $_SERVER['SCRIPT_NAME'];
 $dbfile = 'sqlite:' . $dirbase . 'data/equiz_sqlite3.db';
 $jqfile = $urlbase . '/../js/jq1.4.2.min.js';
 $reqStr = substr($_SERVER['REQUEST_URI'], strlen($_SERVER['SCRIPT_NAME']));
-$adminLogin = 'admin';
-$adminPass = 'ef0ebbb77298e1fbd81f756a4efc35b977c93dae';
-#$adminPass = 'd0be2dc421be4fcd0172e5afceea3970e2f3d940';
-$adminEmail = 'paul.sun@alcatel-lucent.com';
-$adminName  = 'Paul Sun';
+require($dirbase . 'data/settings.php');
 require($dirbase . 'app/controllers.php');
 require($dirbase . 'app/models.php');
 
