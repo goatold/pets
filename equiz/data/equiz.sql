@@ -22,14 +22,15 @@ CREATE TABLE Question (
 	options TEXT NOT NULL,
 	answers TEXT NOT NULL,
 	mtime TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+	comments TEXT,
 	UNIQUE (quizId, seq)
 );
 
 INSERT INTO Question
- (id, quizId, seq, type, body, options, answers)
+ (id, quizId, seq, type, body, options, answers, comments)
  VALUES
  (NULL, 1, 1, 1, "Bill Gates is ____ man in the world.",
-  "the most rich|the most richest|the richest", "2");
+  "the most rich|the most richest|the richest", "2", "optional explanation of answers");
 INSERT INTO Question
  (id, quizId, seq, type, body, options, answers)
  VALUES
@@ -56,10 +57,6 @@ CREATE TABLE PartInfo (
 );
 INSERT INTO PartInfo (id, name, email, tags)
  VALUES (NULL, "Leo Wang", "leo.wang@alcatel-lucent.com", "test");
-INSERT INTO PartInfo (id, name, email, tags)
- VALUES (NULL, "James M Zhang", "james.m.zhang@alcatel-lucent.com", "test");
-INSERT INTO PartInfo (id, name, email, tags)
- VALUES (NULL, "XU Jing jingjina", "Jing_Jingjina.Xu@alcatel-lucent.com", "test");
 
 
 DROP TABLE IF EXISTS Submission;
@@ -82,9 +79,36 @@ CREATE TABLE Token (
 INSERT INTO Token (token, quizId, pId)
  VALUES ('testtest1234567890', 1, 1);
 
+CREATE TABLE htmlCache (
+quizId INTEGER NOT NULL REFERENCES Quiz (id) ON DELETE CASCADE,
+type INTEGER NOT NULL,
+body TEXT NOT NULL,
+mtime TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+UNIQUE (quizId, type)
+);
+
+
 CREATE TRIGGER update_q_mtime UPDATE ON Question  
   BEGIN 
     UPDATE Question SET mtime = CURRENT_TIMESTAMP WHERE id = old.id; 
   END; 
 
+CREATE TRIGGER update_cache_mtime UPDATE ON htmlCache  
+  BEGIN 
+    UPDATE htmlCache SET mtime = CURRENT_TIMESTAMP WHERE quizId = old.quizId and type = old.type; 
+  END; 
 
+CREATE TRIGGER clear_htmlCache_updQ AFTER UPDATE ON Question  
+  BEGIN 
+    DELETE FROM htmlCache WHERE quizId = old.quizId or quizId = new.quizId; 
+  END; 
+
+CREATE TRIGGER clear_htmlCache_delQ AFTER DELETE ON Question  
+  BEGIN 
+    DELETE FROM htmlCache WHERE quizId = old.quizId; 
+  END; 
+
+CREATE TRIGGER clear_htmlCache_insQ AFTER INSERT ON Question  
+  BEGIN 
+    DELETE FROM htmlCache WHERE quizId = new.quizId; 
+  END; 
