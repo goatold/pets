@@ -2,13 +2,7 @@
 action="<?php echo $urlbase . '/question/add/'?>">
 <table>
 <?php
-$formfields = array('quizId' => 'text',
-                    'seq' => 'text',
-                    'type' => 'select',
-                    'body' => 'textarea',
-                    'options' => 'textarea',
-                    'answers' => 'text');
-
+require 'common.php';
 foreach($vargs as $f=>$v) {
 	if (isset($formfields[$f])) {
 		if ($formfields[$f] == 'textarea') {
@@ -18,8 +12,11 @@ foreach($vargs as $f=>$v) {
 		} elseif ($formfields[$f] == 'select') {
 			$inp = '<select name="' . $f . '">';
 			foreach($v['options'] as $ov=>$op) {
-				$inp .= '<option value="' . $ov . '">';
-				$inp .= $ov . ':' . $op . '</option>';
+				$inp .= '<option value="' . $ov . '"';
+				if (isset($v['value']) && $ov == $v['value']) {
+					$inp .= ' selected';
+				}
+				$inp .= '>' . $ov . ':' . $op . '</option>';
 			}
 			$inp .= '</select>';
 		} else {

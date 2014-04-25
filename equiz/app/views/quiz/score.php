@@ -3,13 +3,13 @@
 <h1>
 Scores:
 </h1>
-<table border=1>
+<table class="vlist">
 <?php
 $head = true;
 foreach ($vargs as $s) {
 	if ($head) {
 		foreach (array_keys($s) as $label) {
-			echo '<td>' . $label . '</td>';
+			echo '<th>' . $label . '</th>';
 		}
 		$head = false;
 	}

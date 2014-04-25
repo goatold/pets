@@ -3,9 +3,13 @@ action="<?php echo $urlbase . '/quiz/add/'?>">
 <table>
 <?php
 foreach($vargs as $f=>$v) {
-	$inp = '<input type="text" name="' . $f . '"/>';
+	if (isset($v['value'])) {
+		$inp = '<input type="text" name="' . $f . '" value="' . $v['value'] . '"/>';
+	} else {
+		$inp = '<input type="text" name="' . $f . '"/>';
+	}
 	if (isset($v['ftype']) && $v['ftype'] == 'textarea') {
-		$inp = '<textarea name="' . $f . '"></textarea>';
+		$inp = '<textarea name="' . $f . '" cols=80 rows=5></textarea>';
 	}
 	echo '<tr><td>' . $v['label'] . '</td><td>' . $inp . '</td></tr>';
 }

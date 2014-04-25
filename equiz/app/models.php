@@ -11,6 +11,11 @@
 *
 * models.php 2010-10-24 leow
 * model classes
+* 2014-04-22 leow	add dbLoadChkSub() for read quiz/question data
+*			only for submission check
+* 2014-04-24 leow	add more args to dbRead()
+*			extra (for limit, order by etc.) and 
+*			substr (for select only substr of given fields)
 */
 require($dirbase."/app/equiz_db.php");
 
@@ -29,10 +34,10 @@ class CModel {
 	}
 
 	public function dbDel($where, $from=null) {
-		if (!isset($from) || strlen($from) == 0) {
+		if (!isset($from) && strlen($from) == 0) {
 			$from = $this->from;
 		}
-		if (!isset($where) || strlen($where) == 0) {
+		if (!isset($where) && strlen($where) == 0) {
 			die('Must specify where clause');
 		}
 		$sql = 'delete from ' . $from . ' where ' . $where;
@@ -44,7 +49,7 @@ class CModel {
 	    }
 	}
 	
-	public function dbRead($fields=null, $where=null, $from=null) {
+	public function dbRead($fields=null, $where=null, $extra=null, $substr=null, $from=null) {
 		if (!isset($fields) || count($fields) == 0) {
 			$fields = $this->fields;
 		}
@@ -57,15 +62,24 @@ class CModel {
 		$sql = 'select ';
 		foreach ($fields as $field=>$label) {
 			if (is_int($field)) {
+				if (isset($substr[$label])) {
+					$label = 'substr('. $label .',0,'. intval($substr[$label]) .') as ' . $label;
+				}
 				$sql .= $label . ',';
 			} else {
+				if (isset($substr[$field])) {
+					$field = 'substr('. $field .',0,'. intval($substr[$field]) .')';
+				}
 				$sql .= $field . ' as ' . $label . ',';
 			}
 		}
 		$sql = rtrim($sql, ',');
 		$sql .= ' from ' . $from;
-		if (isset($where) || strlen($where) > 0) {
+		if (isset($where) && strlen($where) > 0) {
 			$sql .= ' where ' . $where;
+		}
+		if (isset($extra) && strlen($extra) > 0) {
+			$sql .= ' ' . $extra;
 		}
 		try {
 			$rc = $this->db->dbq($sql);
@@ -98,16 +112,18 @@ class questionModel extends CModel {
 	                       'body' => 'Body',
 	                       'options' => 'Options',
 	                       'answers' => 'Answers',
+	                       'comments' => 'Comments',
 	                       'mtime' => 'last_modify_time',
 	                      );
 
 	public function dbWrite($attribs, $id='NULL') {
-		$sql = sprintf("insert  or replace into Question (id, quizId, seq, type, body, options, answers)
-		                VALUES (%s, %d, %d,  %d, '%s', '%s', '%s');",
+		$sql = sprintf("insert  or replace into Question (id, quizId, seq, type, body, options, answers, comments)
+		                VALUES (%s, %d, %d,  %d, '%s', '%s', '%s', '%s');",
 		               $id, $attribs['quizId'], $attribs['seq'], $attribs['type'],
 		               SQLite3::escapeString($attribs['body']),
 		               SQLite3::escapeString($attribs['options']),
-		               SQLite3::escapeString($attribs['answers'])
+		               SQLite3::escapeString($attribs['answers']),
+		               SQLite3::escapeString($attribs['comments'])
 		              );
 		$this->db->dbe($sql);
 	}
@@ -158,6 +174,12 @@ class quizModel extends CModel {
 		$this->db->dbe($sql);
 	}
 
+	public function dbLoadChkSub($id) {
+		$this->db->dbq_quizexist($id) or die('Quiz requested not exists');
+		$qm = new questionModel();
+		return $qm->dbRead(array('id', 'type', 'options', 'answers'), 'quizId=' . $id . ' and type!=4 order by seq');
+	}
+	
 	public function dbLoad($id) {
 		$this->db->dbq_quizexist($id) or die('Quiz requested not exists');
 		$qm = new questionModel();
@@ -178,7 +200,7 @@ class quizModel extends CModel {
 			if (!$this->db->dbq_quizexist($id)) continue;
 			$qm = new questionModel();
 			$fields = array('id', 'answers');
-			$questions = $qm->dbRead($fields, 'quizId=' . $qid . ' order by seq');
+			$questions = $qm->dbRead($fields, 'quizId=' . $qid . ' and type!=4 order by seq');
 			$rc[$qid] = array();
 			foreach ($questions as $q) {
 				$rc[$qid][$q['id']] = $q['answers'];

@@ -10,6 +10,7 @@
 * other free or open source software licenses.
 *
 * quiz_db.php 2010-09-14 leow
+* 2014-04-22 Leow	modify dbq_quizdue() to return both bool(overdue) and duetime
 */
 
 
@@ -85,10 +86,27 @@ Class Equiz_DB {
 		return $this->dbe($sql);
 	}
 
+	public function dbin_htmlCache($qid, $type, $str) {
+		$sql = sprintf("insert or replace into htmlCache (quizId, type, body, mtime) values(%d, %d, '%s', CURRENT_TIMESTAMP)",
+		               $qid, $type, SQLite3::escapeString($str));
+		return $this->dbe($sql);
+	}
+
+	public function dbq_htmlCache($qid, $type) {
+		$sql = sprintf("select body from htmlCache where quizId=%d and type=%d", $qid, $type);
+		$rc = $this->dbq($sql)->fetch(PDO::FETCH_NUM);
+		return $rc[0];
+	}
+
 	public function dbq_email($pid) {
 		$sql = sprintf("select email from P_info where id=%d", $pid);
 		$rc = $this->dbq($sql)->fetch(PDO::FETCH_NUM);
 		return $rc[0];
+	}
+
+	public function dbListQuiz() {
+		$sql = "select id, title from quiz";
+		return $this->dbq($sql)->fetchAll(PDO::FETCH_ASSOC);
 	}
 
 	public function dbq_quizexist($qid) {
@@ -105,9 +123,9 @@ Class Equiz_DB {
 	}
 
 	public function dbq_quizdue($qid) {
-		$sql = sprintf("select datetime('now')>duetime from quiz where id=%d", $qid);
+		$sql = sprintf("select datetime('now')>duetime, duetime from quiz where id=%d", $qid);
 		$rc = $this->dbq($sql)->fetch(PDO::FETCH_NUM);
-		return ($rc[0]==1);
+		return array($rc[0]==1, $rc[1]);
 	}
 
 	public function dbq_vtoken($qid, $pid, $token) {

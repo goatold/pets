@@ -5,10 +5,7 @@ include 'usrview.php';
 <?php echo $htmlcss;?>
 </head><body>
 <?php
-$html = genQzHtml($vargs);
-echo $html[0];
-echo genPinfoHtml($vargs['token'], $vargs['pid']);
-echo $html[1];
+echo genQzHtml($vargs, true)[0];
 ?>
 </body></html>
 

@@ -3,16 +3,20 @@ $qid = $vargs['qid'];
 echo '<div>quiz#'.$qid.': '.$vargs['title'].'</div>';
 ?>
 <div>
+<table><tr>
+<td><a href="<?php echo $urlbase . '/quiz/token/?id=' . $qid?>">gen Token for all who got none</a></td>
+<td><a href="<?php echo $urlbase . '/quiz/email/?id=' . $qid?>">email notice to all</a></td>
+</tr></table>
 <?php count($vargs['pinfo'])>0 or die('no participant!');?>
-<table border=1>
+<table class="vlist">
 <tr>
 <?php 
 foreach (array_keys($vargs['pinfo'][0]) as $label) {
-	echo '<td>' . $label . '</td>';
+	echo '<th>' . $label . '</th>';
 }
 ?>
-
-</tr><tr>
+<th colspan=2>Operations</th>
+</tr>
 
 <?php
 foreach ($vargs['pinfo'] as $r) {
@@ -27,6 +31,4 @@ foreach ($vargs['pinfo'] as $r) {
 ?>
 
 </table>
-<a href="<?php echo $urlbase . '/quiz/token/?id=' . $qid?>">gen Token for all who got none</a>
-<a href="<?php echo $urlbase . '/quiz/email/?id=' . $qid?>">email notice to all</a>
 </div>

@@ -11,6 +11,12 @@
 *
 * controllers.php 2010-10-24 leow
 * controller classes
+* 2014-04-23 leow 	add few new features
+- list question per quiz
+- list 10 quiz per page
+- add comments fields to question for answer explanation. 
+- add the "Review" link for question answer review
+- add question type 4: descriptive text
 */
 
 // controller list
@@ -132,20 +138,42 @@ Class questionController extends CController{
 	                            'type',
 	                            'body',
 	                            'options',
-	                            'answers');
+	                            'answers',
+	                            'comments');
 
 	private $typeOptions = array(1 => 'Single Choice',
 	                             2 => 'Multiple Choices',
 	                             3 => 'Bland Filling',
 	                             4 => 'Description Text');
 
+	private function listQuiz() {
+		$qzlist = array();
+		// query list of quiz id and title
+		global $eqdb;
+		foreach($eqdb->dbListQuiz() as $q) {
+			$qzlist[$q['id']] = $q['title'];
+		}
+		return $qzlist;
+	}
 
 	public function __construct() {
 		$this->md = new questionModel();
 	}
 
 	public function viewAction() {
-		$this->render('question', 'view', $this->md->dbRead());
+		global $eqdb;
+		if (isset($_REQUEST['quizId'])) {
+			$quizId = $_REQUEST['quizId'];
+		}
+		if (isset($quizId) && $eqdb->dbq_quizexist($quizId)) {
+			$substr = array('body'=>100, 'options'=>100, 'comments'=>100);
+			$this->render('question', 'view',
+			              array('data' => $this->md->dbRead(null, 'quizId=' . $quizId, Null, $substr),
+			                    'quizId' => $quizId));
+		} else {
+			$this->render('question', 'view',
+			              array('data' => $this->md->dbRead()));
+		}
 	}
 
 	public function defAct() {
@@ -162,6 +190,10 @@ Class questionController extends CController{
 				$formdata[$f] = array('label' => $this->md->fields[$f]);
 			}
 			$formdata['type']['options'] = $this->typeOptions;
+			if(isset($_REQUEST['quizId'])) {
+				$formdata['quizId']['value'] = $_REQUEST['quizId'];
+			}
+			$formdata['quizId']['options'] = $this->listQuiz();
 			$this->render('question', 'add', $formdata);
 		}
 	}
@@ -181,6 +213,7 @@ Class questionController extends CController{
 				$formdata[$f]['value'] = $values[0][$f];
 			}
 			$formdata['type']['options'] = $this->typeOptions;
+			$formdata['quizId']['options'] = $this->listQuiz();
 			$this->render('question', 'edit', array('id' => $_REQUEST['id'], 'fields' => $formdata));
 		}
 	}
@@ -209,7 +242,24 @@ Class quizController extends CController{
 	}
 
 	public function viewAction() {
-		$this->render('quiz', 'view', $this->md->dbRead());
+		global $eqdb, $viewPgSize;
+		$cnt = intval($eqdb->dbq('select count() from quiz')->fetch(PDO::FETCH_NUM)[0]);
+		$maxpg = intval($cnt/$viewPgSize);
+		if (($cnt%$viewPgSize) > 0) $maxpg++;
+		$offset = 0;
+		$pn = 1;
+		//if(isset($_REQUEST['pagen']) && is_int($_REQUEST['pagen'])) {
+		if(isset($_REQUEST['pagen'])) {
+			$pn = intval($_REQUEST['pagen']);
+			if ($pn > $maxpg) $pn = $maxpg;
+			if ($pn < 1) $pn = 1;
+			$offset = $viewPgSize * ($pn - 1);
+		}
+		$vargs = array();
+		$vargs['data'] = $this->md->dbRead(null, null, 'order by id desc limit '. $offset .','. $viewPgSize);
+		$vargs['pn'] = $pn;
+		$vargs['maxpg'] = $maxpg;
+		$this->render('quiz', 'view', $vargs);
 	}
 
 	public function scoreAction() {
@@ -250,33 +300,34 @@ Class quizController extends CController{
 	public function submitAction() {
 		$quiz_id = $_REQUEST['quiz_id'];
 		global $eqdb;
-		if ($eqdb->dbq_quizdue($quiz_id)) {
-			die("Sorry, the Quiz had closed.");
+		$rc = $eqdb->dbq_quizdue($quiz_id);
+		if ($rc[0]) {
+			die("Sorry, the Quiz submissoin had closed by: ". $rc[1]);
 		}
 		// check token
 		$eqdb->dbq_vtoken($quiz_id, $_POST['pid'], $_POST['token']) or die('invalid token');
 		// TODO: refactor dbload to retrive Id, Type and Answers only
-		$data = $this->md->dbLoad($quiz_id);
+		$data = $this->md->dbLoadChkSub($quiz_id);
 		$answ = '';
-		foreach ($data['questions'] as $q) {
-			$sub = $q['ID'] . questionModel::QA_SEP;
-			if ($q['Type'] == 1) {
-				$fn = "q" . $q['ID'] . "_a";
+		foreach ($data as $q) {
+			$sub = $q['id'] . questionModel::QA_SEP;
+			if ($q['type'] == 1) {
+				$fn = "q" . $q['id'] . "_a";
 				if (isset($_POST[$fn])) {
 					$sub .= $_POST[$fn];
 				}
-			} elseif ($q['Type'] == 2) {
-				$c = count(explode(questionModel::OP_SEP, $q['Options']));
+			} elseif ($q['type'] == 2) {
+				$c = count(explode(questionModel::OP_SEP, $q['options']));
 				for ($i=0;$i<$c;$i++) {
-					$fn = "q". $q['ID'] . "_a" . $i;
+					$fn = "q". $q['id'] . "_a" . $i;
 					if (isset($_POST[$fn])) {
 						$sub .= $i.questionModel::OP_SEP;
 					}
 				}
-			} elseif ($q['Type'] == 3) {
-				$c = count(explode(questionModel::OP_SEP, $q['Answers']));
+			} elseif ($q['type'] == 3) {
+				$c = count(explode(questionModel::OP_SEP, $q['answers']));
 				for ($i=0;$i<$c;$i++) {
-					$fn = "q". $q['ID'] . "_a" . $i;
+					$fn = "q". $q['id'] . "_a" . $i;
 					if (isset($_POST[$fn])) {
 						$sub .= $_POST[$fn];
 					}
@@ -306,7 +357,12 @@ Class quizController extends CController{
 				$formfields[$f]['label'] = $this->md->fields[$f];
 			}
 			$formfields['duetime']['label'] = 'CloseTime';
+			global $quizDueDay, $quizDueTime, $defaultTag;
+			$date = new DateTime();
+			$date->add($quizDueDay);
+			$formfields['duetime']['value'] = $date->format("Y-m-d ") . $quizDueTime;
 			$formfields['descrip']['ftype'] = 'textarea';
+			$formfields['tags']['value'] = $defaultTag;
 			$this->render('quiz', 'add', $formfields);
 		}
 	}
@@ -323,6 +379,19 @@ Class quizController extends CController{
 		include($dirviews . '/quiz/take.php');
 	}
 
+	public function reviewAction() {
+		isset($_REQUEST['id']) or die('Quiz id not specified');
+		global $eqdb;
+		$rc = $eqdb->dbq_quizdue($_REQUEST['id']);
+		if(!isset($_SESSION)) { session_start(); }
+		if(!isset($_SESSION['admLogin']) && 
+		   !$rc[0]) {
+			die('Please come back review answers after Quiz submission closure: '. $rc[1]);
+		}
+		$vargs = $this->md->dbLoad($_REQUEST['id']);
+		global $dirviews;
+		include($dirviews . 'quiz/review.php');
+	}
 
 	public function stateAction() {
 		isset($_REQUEST['id']) or die('Quiz id not specified');
@@ -365,28 +434,28 @@ Class quizController extends CController{
 		$t = $this->md->dbRead(array('title'), 'id=' . $qid);
 		$t = $t[0]['title'];
 		$states = $this->md->dbReadState($qid, $pid);
-		global $dirbase, $urlbase, $adminName, $adminEmail;
+		global $dirbase, $urlbase, $quizMailHead, $adminEmail;
 		require($dirbase . 'app/emailer.php');
 		// compose email
-		$url = $urlbase . '/quiz/take/?id=' . $qid . '&pid=%d&token=%s';
-		$msg = '<h1>Machine generated email. Do NOT reply. <br>' . 
-		       'To submit answers, please view this message in a web browser or Click <a href="%s">here</a>. <br>' .
-		       'Contact ' . $adminName . ' (' . $adminEmail . ') for further assistance.' .
-		       '</h1><hr>';
+		require($dirbase . 'app/views/quiz/usrview.php');
+		$vargs = $this->md->dbLoad($qid);
+		$qh = genQzHtml($vargs);
 		$args = array('from' => $adminEmail,
 	                  'subject' => "EQuiz: " . $t,
 	                 );
 		$eh = new EmailHelper($args);
+		$url = $urlbase . '/quiz/take/?id=' . $qid . '&pid=%d&token=%s';
 		foreach($states as $s) {
 			if (isset($s['token']) && 
 			    (!isset($s['stat']) || $s['stat'] < 1)
 			   ) {
+				$m = '<html><head>'. $htmlcss .'</head><body>';
 				$u = sprintf($url, $s['id'], $s['token']);
-				$m = sprintf($msg, $u);
-				ob_start();
-				include $u;
-				$m .= ob_get_contents();
-				ob_end_clean();
+				$m .= sprintf($quizMailHead, $u);
+				$m .= $qh[0];
+				$m .= genPinfoHtml($s['token'], $s['id']);
+				$m .= $qh[1];
+				$m .= '</body></html>';
 				$eh->sndMail(array('message' => $m, 'to' => $s['email']));
 				$this->md->dbUpdState($qid, $s['id']);
 			}

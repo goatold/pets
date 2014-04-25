@@ -2,13 +2,7 @@
 action="<?php echo $urlbase . '/question/edit/'?>">
 <table>
 <?php
-$formfields = array('quizId' => 'text',
-                    'seq' => 'text',
-                    'type' => 'select',
-                    'body' => 'textarea',
-                    'options' => 'textarea',
-                    'answers' => 'text');
-
+require 'common.php';
 foreach($vargs['fields'] as $f=>$v) {
         if (isset($formfields[$f])) {
                 if ($formfields[$f] == 'textarea') {

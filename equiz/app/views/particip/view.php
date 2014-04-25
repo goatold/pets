@@ -1,13 +1,14 @@
 <div>
-<table border=1>
+<a href="<?php echo $urlbase . '/particip/add/'?>">+Add</a>
+<table class="vlist">
 <tr>
 <?php 
 foreach (array_keys($vargs[0]) as $label) {
-	echo '<td>' . $label . '</td>';
+	echo '<th>' . $label . '</th>';
 }
 ?>
-
-</tr><tr>
+<th colspan=2>Operations</th>
+</tr>
 
 <?php
 foreach ($vargs as $q) {
@@ -22,5 +23,4 @@ foreach ($vargs as $q) {
 ?>
 
 </table>
-<a href="<?php echo $urlbase . '/particip/add/'?>">+Add</a>
 </div>
