@@ -20,7 +20,7 @@
 */
 
 // controller list
-$ctrls = array("site", "question", "quiz", "particip", "user");
+$ctrls = array("site", "question", "quiz", "particip", "tag");
 
 class CController {
 	
@@ -124,6 +124,43 @@ Class siteController extends CController{
 	public function defAct() {
 		$this->menuAction();
 	}
+}
+
+Class tagController extends CController{
+	protected $rules = array('add' => 'checkAdm',
+	                         'del' => 'checkAdm',
+	                         'view' => 'checkAdm');
+
+	public function __construct() {
+		global $eqdb;
+		$this->db = $eqdb;
+	}
+	
+	public function delAction() {
+		if(!isset($_REQUEST['tag'])) {
+			die('Please specify tag to delete');
+		}
+		$this->db->dbe('delete from tags where tag="' . $_REQUEST['tag'] .'"');
+		$this->viewAction();
+	}
+
+	public function defAct() {
+		$this->viewAction();
+	}
+
+	public function viewAction() {
+		$this->render('tag', 'view', $this->db->dbq_tags());
+	}
+
+	public function addAction() {
+		if(isset($_POST['tag'])) {
+			$this->db->dbe('insert into tags values("'. $_POST['tag'] .'")');
+			$this->viewAction();
+		} else {
+			$this->render('tag', 'add');
+		}
+	}
+
 }
 
 Class questionController extends CController{
@@ -237,6 +274,8 @@ Class quizController extends CController{
 	                         'email' => 'checkAdm',
 	                         'view' => 'checkAdm');
 
+	private $formfields = array('title', 'tag', 'descrip', 'duetime');
+
 	public function __construct() {
 		$this->md = new quizModel();
 	}
@@ -248,15 +287,18 @@ Class quizController extends CController{
 		if (($cnt%$viewPgSize) > 0) $maxpg++;
 		$offset = 0;
 		$pn = 1;
-		//if(isset($_REQUEST['pagen']) && is_int($_REQUEST['pagen'])) {
 		if(isset($_REQUEST['pagen'])) {
 			$pn = intval($_REQUEST['pagen']);
 			if ($pn > $maxpg) $pn = $maxpg;
 			if ($pn < 1) $pn = 1;
 			$offset = $viewPgSize * ($pn - 1);
 		}
+		$where = null;
+		if(isset($_REQUEST['tag'])) {
+			$where = 'tag="'. $_REQUEST['tag'] .'"';
+		}
 		$vargs = array();
-		$vargs['data'] = $this->md->dbRead(null, null, 'order by id desc limit '. $offset .','. $viewPgSize);
+		$vargs['data'] = $this->md->dbRead(null, $where, 'order by id desc limit '. $offset .','. $viewPgSize);
 		$vargs['pn'] = $pn;
 		$vargs['maxpg'] = $maxpg;
 		$this->render('quiz', 'view', $vargs);
@@ -306,7 +348,6 @@ Class quizController extends CController{
 		}
 		// check token
 		$eqdb->dbq_vtoken($quiz_id, $_POST['pid'], $_POST['token']) or die('invalid token');
-		// TODO: refactor dbload to retrive Id, Type and Answers only
 		$data = $this->md->dbLoadChkSub($quiz_id);
 		$answ = '';
 		foreach ($data as $q) {
@@ -349,21 +390,21 @@ Class quizController extends CController{
 			$this->md->dbWrite($_POST);
 			$this->viewAction();
 		} else {
-			$formfields = array('title' => array(),
-			                    'tags' => array(),
-			                    'descrip' => array()
-			                   );
-			foreach(array_keys($formfields) as $f) {
-				$formfields[$f]['label'] = $this->md->fields[$f];
+			$formdata = array();
+			foreach($this->formfields as $f) {
+				$formdata[$f] = array('label' => $this->md->fields[$f]);
 			}
-			$formfields['duetime']['label'] = 'CloseTime';
-			global $quizDueDay, $quizDueTime, $defaultTag;
+			global $quizDueDay, $quizDueTime, $defaultTag, $eqdb;
 			$date = new DateTime();
 			$date->add($quizDueDay);
-			$formfields['duetime']['value'] = $date->format("Y-m-d ") . $quizDueTime;
-			$formfields['descrip']['ftype'] = 'textarea';
-			$formfields['tags']['value'] = $defaultTag;
-			$this->render('quiz', 'add', $formfields);
+			$formdata['duetime']['value'] = $date->format("Y-m-d ") . $quizDueTime;
+			$formdata['tag']['value'] = $defaultTag;
+			$tags = array();
+			foreach($eqdb->dbq_tags() as $tag) {
+				$tags[$tag] = $tag;
+			}
+			$formdata['tag']['options'] = $tags;
+			$this->render('quiz', 'add', $formdata);
 		}
 	}
 		
@@ -469,22 +510,21 @@ Class quizController extends CController{
 			$this->md->dbWrite($_POST, $_REQUEST['id']);
 			$this->viewAction();
 		} else {
-			$formfields = array('title' => array(),
-			                    'tags' => array(),
-			                    'descrip' => array(),
-			                   );
-			foreach(array_keys($formfields) as $f) {
-				$formfields[$f]['label'] = $this->md->fields[$f];
+			$formdata = array();
+			foreach($this->formfields as $f) {
+				$formdata[$f] = array('label' => $this->md->fields[$f]);
 			}
-			$fields = array_keys($formfields);
-			$fields["datetime(duetime, 'localtime')"] = 'duetime';
-			$formfields['duetime'] = array('label' => 'CloseTime');
-			$values = $this->md->dbRead($fields, 'id='.$_REQUEST['id']);
-			foreach(array_keys($formfields) as $f) {
-				$formfields[$f]['value'] = $values[0][$f];
+			global $eqdb;
+			$tags = array();
+			foreach($eqdb->dbq_tags() as $tag) {
+				$tags[$tag] = $tag;
 			}
-			$formfields['descrip']['ftype'] = 'textarea';
-			$this->render('quiz', 'edit', array('id' => $_REQUEST['id'], 'fields' => $formfields));
+			$formdata['tag']['options'] = $tags;
+			$values = $this->md->dbRead($this->formfields, 'id='.$_REQUEST['id']);
+			foreach($this->formfields as $f) {
+				$formdata[$f]['value'] = $values[0][$f];
+			}
+			$this->render('quiz', 'edit', array('id' => $_REQUEST['id'], 'fields' => $formdata));
 		}
 	}
 
@@ -494,7 +534,6 @@ Class quizController extends CController{
 }
 
 Class participController extends CController{
-
 	protected $rules = array('add' => 'checkAdm',
 	                         'del' => 'checkAdm',
 	                         'edit' => 'checkAdm',
@@ -504,12 +543,48 @@ Class participController extends CController{
 		$this->md = new particpModel();
 	}
 
+	public function subscrbAction() {
+		// get available tag from quiz
+		global $eqdb, $adminEmail, $subEmailDomain;
+		$tags = $eqdb->dbq_tags();
+		if(!is_array($tags) || count($tags)<1) {
+			die('No quiz available for subscription. Please contact <b>'. $adminEmail .'</b> for help.');
+		}
+		if(isset($_POST['email'])) {
+			print_r($_POST);
+			$semail = $_POST['email'] . $subEmailDomain;
+			print $_SERVER['REMOTE_ADDR'];
+			global $dirbase;
+			require($dirbase . 'app/common.php');
+			$tagstr = '';
+			foreach($tags as $t) {
+				if(array_key_exists('tag_'.$t, $_POST)) $tagstr .= $t . particpModel::TAG_SEP;
+			}
+			$tagstr = trim($tagstr, particpModel::TAG_SEP);
+			if (strlen($tagstr) < 1) die('No valid eQuiz Tag selected please go back check.'.
+			    '<input type="button" onclick="history.back();" value="Back">');
+			$token = getRandKey();
+			$sql = 'insert into subinfo values("%s", "%s", "%s", "%s", 1)';
+			$eqdb->dbe(sprintf($sql, $token, $_POST['name'], $semail, $tagstr));
+			// sending email
+			echo '<p>Thank you <strong>'. $_POST['name'] .
+			     '</strong> for subscribing eQuiz with tag: <i>' . $tagstr .'</i></p>';
+			echo '<p>A confirmation email has been sent to <b>'. $semail .
+			     '</b>. Please check your email to complete the subscription.</p>';
+		} else {
+			global $dirviews, $urlbase, $defaultTag;
+			$vargs = array('name' => array('label'=>'Name:'),
+			               'email' => array('label'=>'Email:'),
+			               'tag' => array('label'=>'Subscribe To:', 'choices'=>$tags, 'values'=>array($defaultTag)));
+                	include($dirviews . 'particip/subscrb.php');
+		}
+	}
+
 	public function viewAction() {
-		$tags = null;
-		isset($_POST['tags']) and $tags = $_POST['tags'];
-		isset($_GET['tags']) and $tags = $_GET['tags'];
-		isset($tags) and $tags = 'tags="'.$tags.'"';
-		$this->render('particip', 'view', $this->md->dbRead(null, $tags));
+		$tag = null;
+		isset($_REQUEST['tag']) and $tag = $_REQUEST['tag'];
+		isset($tag) and $tag = 'id in (select pid from subinfo where tag="'.$tag.'")';
+		$this->render('particip', 'view', $this->md->dbRead(null, $tag));
 	}
 
 	public function defAct() {
@@ -521,14 +596,21 @@ Class participController extends CController{
 			$this->md->dbWrite($_POST);
 			$this->viewAction();
 		} else {
-			$formfields = array('name' => array(),
-			                    'email' => array(),
-			                    'tags' => array(),
-			                   );
-			foreach(array_keys($formfields) as $f) {
-				$formfields[$f]['label'] = $this->md->fields[$f];
+			$formdata = array('name' => array(),
+			                  'email' => array());
+			foreach(array_keys($formdata) as $f) {
+				$formdata[$f]['label'] = $this->md->fields[$f];
 			}
-			$this->render('particip', 'add', $formfields);
+			global $eqdb;
+			$tags = array();
+			foreach($eqdb->dbq_tags() as $tag) {
+				$tags[$tag] = $tag;
+			}
+			$formdata['tag'] = array('label' => 'Subscribe To:',
+			                         'choices' => $tags,
+			                         'values' => array());
+			if (isset($_REQUEST['tag'])) array_push($formdata['tag']['values'], $_REQUEST['tag']);
+			$this->render('particip', 'add', $formdata);
 		}
 	}
 
@@ -538,18 +620,26 @@ Class participController extends CController{
 			$this->md->dbWrite($_POST, $_REQUEST['id']);
 			$this->viewAction();
 		} else {
-			$formfields = array('name' => array(),
-			                    'email' => array(),
-			                    'tags' => array(),
-			                   );
-			foreach(array_keys($formfields) as $f) {
-				$formfields[$f]['label'] = $this->md->fields[$f];
+			$formdata = array('name' => array(),
+			                  'email' => array());
+			foreach(array_keys($formdata) as $f) {
+				$formdata[$f]['label'] = $this->md->fields[$f];
 			}
-			$values = $this->md->dbRead(array_keys($formfields), 'id='.$_REQUEST['id']);
-			foreach(array_keys($formfields) as $f) {
-				$formfields[$f]['value'] = $values[0][$f];
+			$values = $this->md->dbRead(array_keys($formdata), 'id='.$_REQUEST['id']);
+			foreach(array_keys($formdata) as $f) {
+				$formdata[$f]['value'] = $values[0][$f];
 			}
-			$this->render('particip', 'edit', array('id' => $_REQUEST['id'], 'fields' => $formfields));
+			global $eqdb;
+			$tags = array();
+			$dbr = $eqdb->dbq_tags();
+			foreach($dbr as $tag) {
+				$tags[$tag] = $tag;
+			}
+			$dbr = $eqdb->dbq_ptags($_REQUEST['id']);
+			$formdata['tag'] = array('label' => 'Subscribe To:',
+			                         'choices' => $tags,
+			                         'values' => $dbr);
+			$this->render('particip', 'edit', array('id' => $_REQUEST['id'], 'fields' => $formdata));
 		}
 	}
 }

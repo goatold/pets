@@ -1,4 +1,5 @@
 <html><head>
+<title>EQuiz</title>
 <STYLE type="text/css">
 .head {
 float: left;
@@ -37,4 +38,7 @@ border-radius: 2px;
 <a href="<?php echo $urlbase . '/site/menu/'?>">menu</a>
 <a href="<?php echo $urlbase . '/site/logout/'?>">logout</a>
 </div>
+<?php 
+require_once 'vcommon.php';
+?>
 

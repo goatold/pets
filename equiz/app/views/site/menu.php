@@ -1,6 +1,9 @@
 <div>
 <ul>
 <li>
+<a href=<?php echo $urlbase . '/tag/view/'?>>Tags</a>
+</li>
+<li>
 <a href=<?php echo $urlbase . '/quiz/view/'?>>Quiz</a>
 </li>
 <li>

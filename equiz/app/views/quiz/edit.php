@@ -1,17 +1,6 @@
-<form autocomplete="off" enctype="multipart/form-data" method="post"
-action="<?php echo $urlbase . '/quiz/edit/'?>">
-<table>
 <?php
-foreach($vargs['fields'] as $f=>$v) {
-	$inp = '<input type="text" name="' . $f . '" value="' . $v['value'] . '"/>';
-	if (isset($v['ftype']) && $v['ftype'] == 'textarea') {
-		$inp = '<textarea name="' . $f . '" cols=80 rows=5>' . $v['value'] . '</textarea>';
-	}
-	echo '<tr><td>' . $v['label'] . '</td><td>' . $inp . '</td></tr>';
-}
+require_once 'common.php';
+$act = $urlbase . '/quiz/edit/?id='. $vargs['id'];
+
+echo genFormHtml($vargs['fields'], $act, $formfields);
 ?>
-</table>
-<input type="hidden" name="id" value="<?php echo $vargs['id'];?>"/>
-<input type="reset" value="reset" />
-<input type="submit" value="submit" />
-</form>

@@ -199,7 +199,6 @@ EOV;
 <span>
 	<input id="%s" name="%s" type="checkbox" class="choiceChkbox" value="%d" %s %s />
 	<label class="choice" for="%s">%s</label>
-
 </span>
 </li>
 EOV;

@@ -1,5 +1,12 @@
+<?php
+$tag = '';
+if (isset($_REQUEST['tag'])) $tag = '?tag='. $_REQUEST['tag'];
+echo <<<EOV
+<a href="$urlbase/particip/add/$tag">+Add</a>
+EOV;
+if (count($vargs) < 1) die('<hr>No data!');
+?>
 <div>
-<a href="<?php echo $urlbase . '/particip/add/'?>">+Add</a>
 <table class="vlist">
 <tr>
 <?php 

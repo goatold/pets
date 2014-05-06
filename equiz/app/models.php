@@ -20,7 +20,7 @@
 require($dirbase."/app/equiz_db.php");
 
 // model list
-$models = array("question", "quiz", "particip", "user");
+$models = array("question", "quiz", "particip");
 
 class CModel {
 	public $from = '';
@@ -117,8 +117,8 @@ class questionModel extends CModel {
 	                      );
 
 	public function dbWrite($attribs, $id='NULL') {
-		$sql = sprintf("insert  or replace into Question (id, quizId, seq, type, body, options, answers, comments)
-		                VALUES (%s, %d, %d,  %d, '%s', '%s', '%s', '%s');",
+		$sql = sprintf("insert  or replace into Question (id, quizId, seq, type, body, options, answers, comments, mtime)
+		                VALUES (%s, %d, %d,  %d, '%s', '%s', '%s', '%s', datetime(CURRENT_TIMESTAMP, 'localtime'));",
 		               $id, $attribs['quizId'], $attribs['seq'], $attribs['type'],
 		               SQLite3::escapeString($attribs['body']),
 		               SQLite3::escapeString($attribs['options']),
@@ -131,22 +131,37 @@ class questionModel extends CModel {
 }
 
 class particpModel extends CModel {
+	const TAG_SEP = "|";
 	public $from = 'partInfo';
 	public $fields = array('id' => 'ID',
 	                       'name' => 'Display_Name',
 	                       'email' => 'Email',
-	                       'tags' => 'Tags',
 	                      );
 
 	public function dbWrite($attribs, $id='NULL') {
-		$sql = sprintf("insert  or replace into PartInfo (id, name, email, tags)
-		                VALUES (%s, '%s', '%s', '%s');",
+		$name = SQLite3::escapeString($attribs['name']);
+		$email = SQLite3::escapeString($attribs['email']);
+		$sql = sprintf("insert or replace into PartInfo (id, name, email)
+		                VALUES (%s, '%s', '%s');",
 		               $id,
-		               SQLite3::escapeString($attribs['name']),
-		               SQLite3::escapeString($attribs['email']),
-		               SQLite3::escapeString($attribs['tags'])
+		               $name,
+		               $email
 		              );
 		$this->db->dbe($sql);
+		if ($id == 'NULL') {
+			$rc = $this->db->dbq('select max(id) from partInfo where name="'.$name.'" and email="'.$email.'"');
+			$id = $rc->fetch(PDO::FETCH_COLUMN);
+		}
+		if(intval($id) == 0) return;
+		$tags = $this->db->dbq_tags();
+		foreach($tags as $tag) {
+			if(array_key_exists('tag_'. $tag, $attribs)) {
+				$sql = sprintf('insert or replace into subInfo (pid, tag) values (%d, "%s")', $id, $tag);
+			} else {
+				$sql = sprintf('delete from subinfo where pid=%d and tag="%s"', $id, $tag);
+			}
+			$this->db->dbe($sql);
+		}
 	}
 
 }
@@ -155,20 +170,20 @@ class quizModel extends CModel {
 	public $from = 'quiz';
 	public $fields = array('id' => 'ID',
 	                       'title' => 'Title',
-	                       "datetime(duetime, 'localtime')" => 'CloseTime',
+	                       'duetime' => 'CloseTime',
 	                       'descrip' => 'Quiz_Description',
-	                       'tags' => 'tags',
+	                       'tag' => 'Tag',
 	                      );
 	public $questions = array();
 	public $attribs = array();
 
 	public function dbWrite($attribs, $id='NULL') {
-		$sql = sprintf("insert or replace into Quiz (id, title, duetime, tags, descrip)
-		                VALUES (%s, '%s', datetime('%s', '-8 hours'), '%s', '%s');",
+		$sql = sprintf("insert or replace into Quiz (id, title, duetime, tag, descrip)
+		                VALUES (%s, '%s', '%s', '%s', '%s');",
 		               $id,
 		               SQLite3::escapeString($attribs['title']),
 		               $attribs['duetime'],
-		               SQLite3::escapeString($attribs['tags']),
+		               SQLite3::escapeString($attribs['tag']),
 		               SQLite3::escapeString($attribs['descrip'])
 		              );
 		$this->db->dbe($sql);
@@ -244,8 +259,9 @@ class quizModel extends CModel {
 	}
 	
 	public function dbReadState($id, $pid=null) {
-		$sql = 'select partInfo.id, name, email from partInfo, quiz '.
-		       'where quiz.tags=partInfo.tags and quiz.id='.$id;
+		$tag = $this->db->dbq_qtag($id);
+		$sql = 'select id, name, email from partInfo, subinfo '.
+		       'where subInfo.tag="'. $tag .'" and id=pid';
 		if(isset($pid)) {
 			$sql .= ' and partInfo.id=' . $pid;
 		}

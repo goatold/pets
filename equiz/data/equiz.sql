@@ -1,16 +1,25 @@
+DROP TABLE IF EXISTS Tags;
+CREATE TABLE Tags (
+	tag TEXT PRIMARY KEY
+);
+INSERT INTO Tags values("test");
+
 DROP TABLE IF EXISTS Quiz;
 CREATE TABLE Quiz (
 	id INTEGER PRIMARY KEY,
 	title TEXT NOT NULL,
 	duetime TIMESTAMP,
-	tags TEXT NOT NULL,
+	tag TEXT REFERENCES Tags (tag) ON DELETE SET NULL,
 	descrip TEXT
 );
-
 INSERT INTO Quiz
- (id, title, duetime, tags, descrip)
+ (id, title, duetime, tag, descrip)
  VALUES
- (NULL, 'test', datetime('2010-12-31 23:59:59', '-8 hours'), "test", "description of this Quiz");
+ (NULL, 'test', datetime(CURRENT_TIMESTAMP, 'localtime'), "test", "description of this Quiz");
+
+
+insert into quiz_ select id,title,duetime,tag,descrip from quiz;
+alter table quiz_ rename to Quiz;
 
 DROP TABLE IF EXISTS Question;
 CREATE TABLE Question (
@@ -21,7 +30,7 @@ CREATE TABLE Question (
 	body TEXT NOT NULL,
 	options TEXT NOT NULL,
 	answers TEXT NOT NULL,
-	mtime TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+	mtime TIMESTAMP DEFAULT (datetime(CURRENT_TIMESTAMP, 'localtime')),
 	comments TEXT,
 	UNIQUE (quizId, seq)
 );
@@ -53,17 +62,16 @@ CREATE TABLE PartInfo (
 	id INTEGER PRIMARY KEY,
 	name TEXT NOT NULL,
 	email TEXT NOT NULL,
-	tags TEXT
 );
-INSERT INTO PartInfo (id, name, email, tags)
- VALUES (NULL, "Leo Wang", "leo.wang@alcatel-lucent.com", "test");
+INSERT INTO PartInfo (id, name, email)
+ VALUES (NULL, "Leo Wang", "leo.wang@alcatel-lucent.com");
 
 
 DROP TABLE IF EXISTS Submission;
 CREATE TABLE Submission (
 	quizId INTEGER NOT NULL REFERENCES Quiz (id) ON DELETE CASCADE,
 	pId INTEGER NOT NULL REFERENCES PartInfo (id) ON DELETE CASCADE,
-	subtime TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	subtime TIMESTAMP NOT NULL DEFAULT (datetime(CURRENT_TIMESTAMP, 'localtime')),
 	subValue TEXT NOT NULL,
 	PRIMARY KEY (quizId, pId)
 );
@@ -79,36 +87,26 @@ CREATE TABLE Token (
 INSERT INTO Token (token, quizId, pId)
  VALUES ('testtest1234567890', 1, 1);
 
-CREATE TABLE htmlCache (
-quizId INTEGER NOT NULL REFERENCES Quiz (id) ON DELETE CASCADE,
-type INTEGER NOT NULL,
-body TEXT NOT NULL,
-mtime TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-UNIQUE (quizId, type)
+DROP TABLE IF EXISTS SubInfo;
+CREATE TABLE SubInfo (
+	tag TEXT NOT NULL REFERENCES Tags (tag) ON DELETE CASCADE,
+	pId INTEGER NOT NULL REFERENCES PartInfo (id) ON DELETE CASCADE,
+	PRIMARY KEY (tag, pId)
+);
+
+DROP TABLE IF EXISTS RegInfo;
+CREATE TABLE RegInfo (
+        token CHARACTER(18),
+        name TEXT NOT NULL,
+        email TEXT NOT NULL,
+        tags TEXT,
+        op INTEGER NOT NULL DEFAULT 1,
+        PRIMARY KEY (token, email)
 );
 
 
 CREATE TRIGGER update_q_mtime UPDATE ON Question  
   BEGIN 
-    UPDATE Question SET mtime = CURRENT_TIMESTAMP WHERE id = old.id; 
+    UPDATE Question SET mtime = datetime(CURRENT_TIMESTAMP, 'localtime') WHERE id = old.id; 
   END; 
 
-CREATE TRIGGER update_cache_mtime UPDATE ON htmlCache  
-  BEGIN 
-    UPDATE htmlCache SET mtime = CURRENT_TIMESTAMP WHERE quizId = old.quizId and type = old.type; 
-  END; 
-
-CREATE TRIGGER clear_htmlCache_updQ AFTER UPDATE ON Question  
-  BEGIN 
-    DELETE FROM htmlCache WHERE quizId = old.quizId or quizId = new.quizId; 
-  END; 
-
-CREATE TRIGGER clear_htmlCache_delQ AFTER DELETE ON Question  
-  BEGIN 
-    DELETE FROM htmlCache WHERE quizId = old.quizId; 
-  END; 
-
-CREATE TRIGGER clear_htmlCache_insQ AFTER INSERT ON Question  
-  BEGIN 
-    DELETE FROM htmlCache WHERE quizId = new.quizId; 
-  END; 

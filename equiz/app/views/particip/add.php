@@ -1,13 +1,6 @@
-<form autocomplete="off" enctype="multipart/form-data" method="post"
-action="<?php echo $urlbase . '/particip/add/'?>">
-<table>
 <?php
-foreach($vargs as $f=>$v) {
-	$inp = '<input type="text" name="' . $f . '"/>';
-	echo '<tr><td>' . $v['label'] . '</td><td>' . $inp . '</td></tr>';
-}
+require_once 'common.php';
+$act = $urlbase . '/particip/add/';
+
+echo genFormHtml($vargs, $act, $formfields);
 ?>
-</table>
-<input type="reset" value="reset" />
-<input type="submit" value="submit" />
-</form>

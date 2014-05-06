@@ -16,6 +16,7 @@ $adminLogin = 'admin';
 $adminPass = 'ef0ebbb77298e1fbd81f756a4efc35b977c93dae';
 $adminEmail = 'elt-qdrd@LIST.LUCENT.COM';
 $adminName  = 'ELT Team';
+$subEmailDomain = '@ALCATEL-LUCENT.COM';
 date_default_timezone_set('Asia/Shanghai');
 // default Quiz due after 2 days
 $quizDueDay = new DateInterval('P2D');

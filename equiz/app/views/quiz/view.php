@@ -1,3 +1,7 @@
+<a href="<?php echo $urlbase . '/quiz/add/'?>">+Add New Quiz</a>
+<?php 
+if(count($vargs['data']) < 1) die('<hr>No data!');
+?>
 <div>
 <table class="vlist">
 <tr>
@@ -28,7 +32,6 @@ $plnk = '<a href="' . $urlbase . '/quiz/view/?pagen=%d">%s</a>';
 ?>
 
 </table>
-<a href="<?php echo $urlbase . '/quiz/add/'?>">+Add</a>
 <div><form method="post"
 action="<?php echo $urlbase . '/quiz/score/'?>">
 <input type="text" name="id"/>
