@@ -43,6 +43,9 @@ function genInpTextHtml($f, $v) {
 	if (isset($v['value'])) {
 		$html .= ' value="' . $v['value'] . '"';
 	}
+	if (isset($v['attrib'])) {
+		$html .=  $v['attrib'];
+	}
 	$html .= '/>';
 	return $html;
 }

@@ -131,7 +131,7 @@ class questionModel extends CModel {
 }
 
 class particpModel extends CModel {
-	const TAG_SEP = "|";
+	const TAG_SEP = ",";
 	public $from = 'partInfo';
 	public $fields = array('id' => 'ID',
 	                       'name' => 'Display_Name',

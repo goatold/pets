@@ -62,6 +62,7 @@ CREATE TABLE PartInfo (
 	id INTEGER PRIMARY KEY,
 	name TEXT NOT NULL,
 	email TEXT NOT NULL,
+	UNIQUE (email)
 );
 INSERT INTO PartInfo (id, name, email)
  VALUES (NULL, "Leo Wang", "leo.wang@alcatel-lucent.com");
@@ -97,10 +98,11 @@ CREATE TABLE SubInfo (
 DROP TABLE IF EXISTS RegInfo;
 CREATE TABLE RegInfo (
         token CHARACTER(18),
-        name TEXT NOT NULL,
+        name TEXT,
         email TEXT NOT NULL,
         tags TEXT,
         op INTEGER NOT NULL DEFAULT 1,
+	rtime TIMESTAMP NOT NULL DEFAULT (datetime(CURRENT_TIMESTAMP, 'localtime')),
         PRIMARY KEY (token, email)
 );
 

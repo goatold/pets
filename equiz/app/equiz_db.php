@@ -11,7 +11,7 @@
 *
 * quiz_db.php 2010-09-14 leow
 * 2014-04-22 Leow	modify dbq_quizdue() to return both bool(overdue) and duetime
-* 2014-04-24 Leow	turn foreign key support and case_sensitive_like on PDO creation
+* 2014-04-24 Leow	set foreign key support and case_sensitive_like on PDO creation
 */
 
 
@@ -25,8 +25,8 @@ Class Equiz_DB {
 	        $this->db = new PDO($f);
 		// turn on foreign key support
 	        $this->dbe('PRAGMA foreign_keys = ON');
-		// turn on case sensitive like
-	        $this->dbe('PRAGMA case_sensitive_like = 1');
+		// turn off case sensitive like
+	        $this->dbe('PRAGMA case_sensitive_like = 0');
 	    }
 	    catch (Exception $e) {
 	        echo "open equize sqlite db Failed:\n" . $e->getMessage();

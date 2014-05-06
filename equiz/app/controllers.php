@@ -48,7 +48,7 @@ class CController {
 			$act->invoke($this);
 		}
 	}
-	
+
 	public function render($module, $view, $vargs=array()) {
 		global $dirviews, $urlbase;
 		$pstr = $dirviews . $module . '/';
@@ -476,16 +476,18 @@ Class quizController extends CController{
 		$t = $t[0]['title'];
 		$states = $this->md->dbReadState($qid, $pid);
 		global $dirbase, $urlbase, $quizMailHead, $adminEmail;
-		require($dirbase . 'app/emailer.php');
 		// compose email
-		require($dirbase . 'app/views/quiz/usrview.php');
+		require_once($dirbase . 'app/views/quiz/usrview.php');
 		$vargs = $this->md->dbLoad($qid);
 		$qh = genQzHtml($vargs);
 		$args = array('from' => $adminEmail,
 	                  'subject' => "EQuiz: " . $t,
 	                 );
+		require_once($dirbase . 'app/emailer.php');
 		$eh = new EmailHelper($args);
 		$url = $urlbase . '/quiz/take/?id=' . $qid . '&pid=%d&token=%s';
+		$subinfo = '<div> to subscribe:'. $urlbase . '/particip/subscrb/</div>';
+		$subinfo .= '<div> to unsubscribe:'. $urlbase . '/particip/unsub/</div>';
 		foreach($states as $s) {
 			if (isset($s['token']) && 
 			    (!isset($s['stat']) || $s['stat'] < 1)
@@ -496,7 +498,7 @@ Class quizController extends CController{
 				$m .= $qh[0];
 				$m .= genPinfoHtml($s['token'], $s['id']);
 				$m .= $qh[1];
-				$m .= '</body></html>';
+				$m .= $subinfo.'</body></html>';
 				$eh->sndMail(array('message' => $m, 'to' => $s['email']));
 				$this->md->dbUpdState($qid, $s['id']);
 			}
@@ -543,19 +545,59 @@ Class participController extends CController{
 		$this->md = new particpModel();
 	}
 
+	public function unSubAction() {
+		if(isset($_POST['email'])) {
+			global $eqdb, $adminEmail, $subEmailDomain;
+			$email = $_POST['email'];
+			if(!($pos = strpos($email, '@'))) $email .= $subEmailDomain;
+			$sql = 'select id from partinfo where email like "'.$email.'"';
+			$rc = $eqdb->dbq($sql);
+			if(!($rc&&($id=$rc->fetch(PDO::FETCH_COLUMN)))) {
+				die("Email: ".$email." is not registered!");
+			}
+			$rip = $_SERVER['REMOTE_ADDR'];
+			global $dirbase, $urlbase;
+			require_once($dirbase . 'app/common.php');
+			$token = getRandKey();
+			$sql = 'insert into reginfo (token, email, op) values("'.$token.'", "'.$email.'", 2)';
+			$eqdb->dbe($sql);
+			// sending email
+			$args = array('from' => $adminEmail,
+			              'subject' => "EQuiz: unsubscription",
+			             );
+			require_once($dirbase . 'app/emailer.php');
+			$eh = new EmailHelper($args);
+			$url = $urlbase . '/particip/confsub/?token='. $token .'&email='. $email;
+			$m =<<<EOV
+<p>Someone from IP:$rip is trying to remove your email address ($email) from eQuiz. Please use following link to confirm the unsubscription</p>
+<span>$url</span>
+EOV;
+			$eh->sndMail(array('message' => $m, 'to' => $email));
+			echo '<p>Thank you for using eQuiz</p>';
+			echo '<p>A confirmation email has been sent to <b>'. $email .
+			     '</b>. Please check your email to complete the unsubscription.</p>';
+		} else {
+			global $dirviews, $urlbase;
+			$vargs = array('email' => array('label'=>'Unsubscribing email:','attrib' => ' required '));
+                	include($dirviews . 'particip/unsub.php');
+		}
+	}
+
 	public function subscrbAction() {
 		// get available tag from quiz
 		global $eqdb, $adminEmail, $subEmailDomain;
-		$tags = $eqdb->dbq_tags();
+		$tags = array();
+		foreach($eqdb->dbq_tags() as $tag) {
+			$tags[$tag] = $tag;
+		}
 		if(!is_array($tags) || count($tags)<1) {
 			die('No quiz available for subscription. Please contact <b>'. $adminEmail .'</b> for help.');
 		}
 		if(isset($_POST['email'])) {
-			print_r($_POST);
-			$semail = $_POST['email'] . $subEmailDomain;
-			print $_SERVER['REMOTE_ADDR'];
-			global $dirbase;
-			require($dirbase . 'app/common.php');
+			$semail = $_POST['email'];
+			$sname = $_POST['name'];
+			if(!($pos = strpos($semail, '@'))) $semail .= $subEmailDomain;
+			$rip = $_SERVER['REMOTE_ADDR'];
 			$tagstr = '';
 			foreach($tags as $t) {
 				if(array_key_exists('tag_'.$t, $_POST)) $tagstr .= $t . particpModel::TAG_SEP;
@@ -563,21 +605,70 @@ Class participController extends CController{
 			$tagstr = trim($tagstr, particpModel::TAG_SEP);
 			if (strlen($tagstr) < 1) die('No valid eQuiz Tag selected please go back check.'.
 			    '<input type="button" onclick="history.back();" value="Back">');
+			global $dirbase, $urlbase;
+			require_once($dirbase . 'app/common.php');
 			$token = getRandKey();
-			$sql = 'insert into subinfo values("%s", "%s", "%s", "%s", 1)';
-			$eqdb->dbe(sprintf($sql, $token, $_POST['name'], $semail, $tagstr));
+			$sql = 'insert into reginfo (token, name, email, tags, op) values("%s", "%s", "%s", "%s", 1)';
+			$eqdb->dbe(sprintf($sql, $token, $sname, $semail, $tagstr));
 			// sending email
-			echo '<p>Thank you <strong>'. $_POST['name'] .
+			$args = array('from' => $adminEmail,
+			              'subject' => "EQuiz: subscription",
+			             );
+			require_once($dirbase . 'app/emailer.php');
+			$eh = new EmailHelper($args);
+			$url = $urlbase . '/particip/confsub/?token='. $token .'&email='. $semail;
+			$m =<<<EOV
+<p>$sname from IP:$rip registered this email address to receive eQuiz emails. Please use following link to confirm the subscription</p>
+<span>$url</span>
+EOV;
+			$eh->sndMail(array('message' => $m, 'to' => $semail));
+			echo '<p>Thank you <strong>'. $sname .
 			     '</strong> for subscribing eQuiz with tag: <i>' . $tagstr .'</i></p>';
 			echo '<p>A confirmation email has been sent to <b>'. $semail .
 			     '</b>. Please check your email to complete the subscription.</p>';
 		} else {
 			global $dirviews, $urlbase, $defaultTag;
-			$vargs = array('name' => array('label'=>'Name:'),
-			               'email' => array('label'=>'Email:'),
+			$vargs = array('name' => array('label'=>'Name:', 'attrib' => ' required '),
+			               'email' => array('label'=>'Email:','attrib' => ' required '),
 			               'tag' => array('label'=>'Subscribe To:', 'choices'=>$tags, 'values'=>array($defaultTag)));
                 	include($dirviews . 'particip/subscrb.php');
 		}
+	}
+
+	public function confsubAction() {
+		global $eqdb;
+		$email = $_REQUEST['email'];
+		$token = $_REQUEST['token'];
+		$sql = 'select name, tags, op from reginfo where email="'.$email.'" and token="'.$token.'"';
+		$rc = $eqdb->dbq($sql);
+		if(!($rc&&($rd=$rc->fetch(PDO::FETCH_ASSOC)))) die("No registration found!");
+		if($rd['op'] == '2') { // unsubscrib
+			$eqdb->dbe('delete from partinfo where email like "'.$email.'"');
+			$eqdb->dbe('delete from reginfo where email="'.$email.'" and token="'.$token.'"');
+			die("Bye <b>". $email ."</b>! You've been removed from eQuiz");
+		}
+		$name = $rd['name'];
+		$stags = explode(particpModel::TAG_SEP, $rd['tags']);
+		$sql = 'select id from partinfo where email like "'.$email.'"';
+		$rc = $eqdb->dbq($sql);
+		if(!($rc&&($id=$rc->fetch(PDO::FETCH_COLUMN)))) { // New user
+			$eqdb->dbe('insert into partinfo (name, email) values("'.$name.'","'.$email.'")');
+			$rc = $eqdb->dbq('select max(id) from partinfo where name="'.$name.'" and email="'.$email.'"');
+			$id = $rc->fetch(PDO::FETCH_COLUMN);
+		}
+		$tags = $eqdb->dbq_tags();
+		// update subInfo table
+		foreach($tags as $tag) {
+			if(is_int(array_search($tag, $stags))) {
+				$sql = sprintf('insert or replace into subInfo (pid, tag) values (%d, "%s")', $id, $tag);
+			} else {
+				$sql = sprintf('delete from subinfo where pid=%d and tag="%s"', $id, $tag);
+			}
+			$eqdb->dbe($sql);
+		}
+		$eqdb->dbe('delete from reginfo where email="'.$email.'" and token="'.$token.'"');
+		echo '<p>Thank you <b>'. $name .'</b> for subscribing eQuiz <i>'.$rd['tags'].'</i></p>';
+		echo '<p>Subscription of <b>'. $email .'</b> confirmed!</p>';
 	}
 
 	public function viewAction() {
@@ -596,8 +687,8 @@ Class participController extends CController{
 			$this->md->dbWrite($_POST);
 			$this->viewAction();
 		} else {
-			$formdata = array('name' => array(),
-			                  'email' => array());
+			$formdata = array('name' => array('attrib' => ' required '),
+			                  'email' => array('attrib' => ' required '));
 			foreach(array_keys($formdata) as $f) {
 				$formdata[$f]['label'] = $this->md->fields[$f];
 			}
@@ -620,8 +711,8 @@ Class participController extends CController{
 			$this->md->dbWrite($_POST, $_REQUEST['id']);
 			$this->viewAction();
 		} else {
-			$formdata = array('name' => array(),
-			                  'email' => array());
+			$formdata = array('name' => array('attrib' => ' required '),
+			                  'email' => array('attrib' => ' required '));
 			foreach(array_keys($formdata) as $f) {
 				$formdata[$f]['label'] = $this->md->fields[$f];
 			}

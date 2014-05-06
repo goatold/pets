@@ -1,5 +1,5 @@
 <html><head>
-<title>EQuiz</title>
+<title>EQuiz Subscription</title>
 </head><body>
 <h1 id="logo">
 <!--equiz logo here-->
