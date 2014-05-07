@@ -486,8 +486,6 @@ Class quizController extends CController{
 		require_once($dirbase . 'app/emailer.php');
 		$eh = new EmailHelper($args);
 		$url = $urlbase . '/quiz/take/?id=' . $qid . '&pid=%d&token=%s';
-		$subinfo = '<div> to subscribe:'. $urlbase . '/particip/subscrb/</div>';
-		$subinfo .= '<div> to unsubscribe:'. $urlbase . '/particip/unsub/</div>';
 		foreach($states as $s) {
 			if (isset($s['token']) && 
 			    (!isset($s['stat']) || $s['stat'] < 1)
@@ -498,7 +496,7 @@ Class quizController extends CController{
 				$m .= $qh[0];
 				$m .= genPinfoHtml($s['token'], $s['id']);
 				$m .= $qh[1];
-				$m .= $subinfo.'</body></html>';
+				$m .= '</body></html>';
 				$eh->sndMail(array('message' => $m, 'to' => $s['email']));
 				$this->md->dbUpdState($qid, $s['id']);
 			}
