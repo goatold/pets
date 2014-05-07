@@ -18,9 +18,6 @@ INSERT INTO Quiz
  (NULL, 'test', datetime(CURRENT_TIMESTAMP, 'localtime'), "test", "description of this Quiz");
 
 
-insert into quiz_ select id,title,duetime,tag,descrip from quiz;
-alter table quiz_ rename to Quiz;
-
 DROP TABLE IF EXISTS Question;
 CREATE TABLE Question (
 	id INTEGER PRIMARY KEY,
@@ -111,4 +108,10 @@ CREATE TRIGGER update_q_mtime UPDATE ON Question
   BEGIN 
     UPDATE Question SET mtime = datetime(CURRENT_TIMESTAMP, 'localtime') WHERE id = old.id; 
   END; 
+
+-- clear obsolete data
+delete from token where quizid not in (select id from quiz);
+delete from token where quizid in (select id from quiz where duetime < datetime('now','localtime'));
+delete from submission where quizid not in (select id from quiz);
+delete from reginfo where rtime < datetime('now','-1 days');
 
