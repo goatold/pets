@@ -15,7 +15,7 @@
 
 function getParam($stringname) {
 	if (isset($_REQUEST[$stringname])) {
-		return $_REQUEST[$stringname];
+		return urldecode($_REQUEST[$stringname]);
 	} else {
 		return NULL;
 	}

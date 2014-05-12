@@ -12,7 +12,7 @@
 * controllers.php 2010-10-24 leow
 * controller classes
 * 2014-04-23 leow 	add few new features
-- list question per quiz
+- list question per quiz, orderby quizid
 - list 10 quiz per page
 - add comments fields to question for answer explanation. 
 - add the "Review" link for question answer review
@@ -140,7 +140,7 @@ Class tagController extends CController{
 		if(!isset($_REQUEST['tag'])) {
 			die('Please specify tag to delete');
 		}
-		$this->db->dbe('delete from tags where tag="' . $_REQUEST['tag'] .'"');
+		$this->db->dbe('delete from tags where tag="' . urldecode($_REQUEST['tag']) .'"');
 		$this->viewAction();
 	}
 
@@ -202,14 +202,15 @@ Class questionController extends CController{
 		if (isset($_REQUEST['quizId'])) {
 			$quizId = $_REQUEST['quizId'];
 		}
+		$substr = array('body'=>100, 'options'=>100, 'comments'=>100);
+		$orderby = ' order by quizid desc,seq ';
 		if (isset($quizId) && $eqdb->dbq_quizexist($quizId)) {
-			$substr = array('body'=>100, 'options'=>100, 'comments'=>100);
 			$this->render('question', 'view',
-			              array('data' => $this->md->dbRead(null, 'quizId=' . $quizId, Null, $substr),
+			              array('data' => $this->md->dbRead(null, 'quizId=' . $quizId, $orderby, $substr),
 			                    'quizId' => $quizId));
 		} else {
 			$this->render('question', 'view',
-			              array('data' => $this->md->dbRead()));
+			              array('data' => $this->md->dbRead(null, null, $orderby, $substr)));
 		}
 	}
 
@@ -295,7 +296,7 @@ Class quizController extends CController{
 		}
 		$where = null;
 		if(isset($_REQUEST['tag'])) {
-			$where = 'tag="'. $_REQUEST['tag'] .'"';
+			$where = 'tag="'. urldecode($_REQUEST['tag']) .'"';
 		}
 		$vargs = array();
 		$vargs['data'] = $this->md->dbRead(null, $where, 'order by id desc limit '. $offset .','. $viewPgSize);
@@ -635,7 +636,7 @@ EOV;
 
 	public function confsubAction() {
 		global $eqdb;
-		$email = $_REQUEST['email'];
+		$email = urldecode($_REQUEST['email']);
 		$token = $_REQUEST['token'];
 		$sql = 'select name, tags, op from reginfo where email="'.$email.'" and token="'.$token.'"';
 		$rc = $eqdb->dbq($sql);
@@ -671,7 +672,7 @@ EOV;
 
 	public function viewAction() {
 		$tag = null;
-		isset($_REQUEST['tag']) and $tag = $_REQUEST['tag'];
+		isset($_REQUEST['tag']) and $tag = urldecode($_REQUEST['tag']);
 		isset($tag) and $tag = 'id in (select pid from subinfo where tag="'.$tag.'")';
 		$this->render('particip', 'view', $this->md->dbRead(null, $tag));
 	}
@@ -698,7 +699,7 @@ EOV;
 			$formdata['tag'] = array('label' => 'Subscribe To:',
 			                         'choices' => $tags,
 			                         'values' => array());
-			if (isset($_REQUEST['tag'])) array_push($formdata['tag']['values'], $_REQUEST['tag']);
+			if (isset($_REQUEST['tag'])) array_push($formdata['tag']['values'], urldecode($_REQUEST['tag']));
 			$this->render('particip', 'add', $formdata);
 		}
 	}
