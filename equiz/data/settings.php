@@ -14,9 +14,10 @@
 */
 $adminLogin = 'admin';
 $adminPass = 'ef0ebbb77298e1fbd81f756a4efc35b977c93dae';
-$adminEmail = 'elt-qdrd@LIST.LUCENT.COM';
-$adminName  = 'ELT Team';
 $subEmailDomain = '@ALCATEL-LUCENT.COM';
+$smtpSvr = 'us70tusmtp1.zam.alcatel-lucent.com';
+$smtpPort = 25;
+$dbgEmail = 'leo.wang@alcatel-lucent.com';
 date_default_timezone_set('Asia/Shanghai');
 // default Quiz due after 2 days
 $quizDueDay = new DateInterval('P2D');
@@ -27,5 +28,4 @@ $viewPgSize = 10;
 $quizMailHead = '<h2>Machine generated email. Do NOT reply. <br>' .
                 'To submit answers, please view this message ' .
                 'in a web browser or Click <a href="%s">here</a>. <br>' .
-                'Contact ' . $adminName . ' (' . $adminEmail .
-                ') for further assistance.</h2><hr>';
+                'Contact %s (%s) for further assistance.</h2><hr>';

@@ -39,7 +39,7 @@ background-color: yellow;
 EOV;
 
 function  genQzHtml(&$vargs, $isReview=false) {
-	global $jqfile, $urlbase, $adminEmail;
+	global $jqfile, $urlbase;
 	// store html into array of sections. some variable html may be inserted.
 	$html = array();
 	$hsec = 0;
@@ -55,7 +55,9 @@ function  genQzHtml(&$vargs, $isReview=false) {
 	$html[$hsec] .= '<div><h2>'. $vargs['quiz']['Title'] .'</h2>';
 	$html[$hsec] .= '<p>'. $vargs['quiz']['Quiz_Description'] .'</p>';
 	$html[$hsec] .= '<p>submission close time: '. $vargs['quiz']['CloseTime'] .'</p>';
-	$html[$hsec] .= '<p>You may come back <a href="'.$revurl.'">review answers</a> after submission closure</p>';
+	if (!$isReview) {
+		$html[$hsec] .= '<p>You may come back <a href="'.$revurl.'">review answers</a> after submission closure</p>';
+	}
 	$html[$hsec] .= '</div><hr>';
 	// interactive resp div for usr submit quiz
 	if (!$isReview) {
@@ -71,7 +73,7 @@ EOV;
 	$html[$hsec] .= array_shift($hf);
 	$html = array_merge($html, $hf);
 	$hsec = count($html) - 1;
-	$html[$hsec] .= '<hr><div>Sponsor '. $adminEmail .'</div>';
+	$html[$hsec] .= '<hr><div>Sponsor '. $vargs['admEmail'] .'</div>';
 	$html[$hsec] .= '<div> <a href="'. $urlbase . '/particip/subscrb/">link to subscribe</a></div>';
 	$html[$hsec] .= '<div> <a href="'. $urlbase . '/particip/unsub/">link to unsubscribe</a></div>';
 	// javascript for dym effect

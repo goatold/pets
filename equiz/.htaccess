@@ -1,6 +1,6 @@
 <IfModule mod_rewrite.c>
     RewriteEngine on
-    RewriteRule    ^$    pub/    [L]
-    RewriteRule    (.*) pub/$1    [L]
+    RewriteRule    ^$    pub/main.php    [L]
+    RewriteRule    (.+) pub/$1    [L]
 </IfModule>
 

@@ -201,8 +201,11 @@ class quizModel extends CModel {
 		$this->questions = $qm->dbRead(null, 'quizId=' . $id . ' order by seq');
 		$quiz = $this->dbRead(null, 'id=' . $id);
 		$this->attribs = $quiz[0];
+		$adm = $this->db->dbq_admByTag($quiz['0']['Tag']);
 		$rc = array('questions' => $this->questions,
 		            'quiz' => $quiz[0],
+		            'admEmail' => $adm['email'],
+		            'admin' => $adm['admin'],
 		           );
 		return $rc;
 	}

@@ -12,6 +12,7 @@
 * quiz_db.php 2010-09-14 leow
 * 2014-04-22 Leow	modify dbq_quizdue() to return both bool(overdue) and duetime
 * 2014-04-24 Leow	set foreign key support and case_sensitive_like on PDO creation
+* 2014-04-24 Leow	get admin of tag when load quiz data from DB
 */
 
 
@@ -58,6 +59,12 @@ Class Equiz_DB {
 	public function dbq_quiz($id) {
 		$sql = sprintf("select id, title, descrip, duetime from Quiz where id=%d", $id);
 		$rc = $this->dbq($sql);
+		return $rc;
+	}
+
+	public function dbq_admByTag($tag) {
+		$sql = sprintf("select admin, email from tags where tag='%s'", $tag);
+		$rc = $this->dbq($sql)->fetch(PDO::FETCH_ASSOC);
 		return $rc;
 	}
 

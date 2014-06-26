@@ -1,8 +1,10 @@
 DROP TABLE IF EXISTS Tags;
 CREATE TABLE Tags (
-	tag TEXT PRIMARY KEY
+	tag TEXT PRIMARY KEY,
+	admin TEXT NOT NULL DEFAULT "Leo Wang",
+	email TEXT NOT NULL DEFAULT "leo.wang@alcatel-lucent.com"
 );
-INSERT INTO Tags values("test");
+INSERT INTO Tags (tag) values("test");
 
 DROP TABLE IF EXISTS Quiz;
 CREATE TABLE Quiz (

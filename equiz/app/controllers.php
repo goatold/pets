@@ -17,6 +17,7 @@
 - add comments fields to question for answer explanation. 
 - add the "Review" link for question answer review
 - add question type 4: descriptive text
+* 2014-04-23 leow 	add admin per tag
 */
 
 // controller list
@@ -128,6 +129,7 @@ Class siteController extends CController{
 
 Class tagController extends CController{
 	protected $rules = array('add' => 'checkAdm',
+	                         'edit' => 'checkAdm',
 	                         'del' => 'checkAdm',
 	                         'view' => 'checkAdm');
 
@@ -154,13 +156,24 @@ Class tagController extends CController{
 
 	public function addAction() {
 		if(isset($_POST['tag'])) {
-			$this->db->dbe('insert into tags values("'. $_POST['tag'] .'")');
+			$this->db->dbe('insert into tags values("'. $_POST['tag'] .'", "'. $_POST['admin'] .'","'. $_POST['email'] .'")');
 			$this->viewAction();
 		} else {
 			$this->render('tag', 'add');
 		}
 	}
 
+	public function editAction() {
+		isset($_REQUEST['tag']) or die('tag not specified');
+		if(isset($_POST['admin'])) {
+			$this->db->dbe('update tags set admin="'.$_POST['admin'].'", email="'.$_POST['email'].'" where tag="'.$_REQUEST['tag'].'"');
+			$this->viewAction();
+		} else {
+			$formdata = $this->db->dbq('select admin, email from tags where tag="'.$_REQUEST['tag'].'"')
+			          ->fetch(PDO::FETCH_ASSOC);
+			$this->render('tag', 'edit', array('tag' => $_REQUEST['tag'], 'fields' => $formdata));
+		}
+	}
 }
 
 Class questionController extends CController{
@@ -476,16 +489,17 @@ Class quizController extends CController{
 		$t = $this->md->dbRead(array('title'), 'id=' . $qid);
 		$t = $t[0]['title'];
 		$states = $this->md->dbReadState($qid, $pid);
-		global $dirbase, $urlbase, $quizMailHead, $adminEmail;
+		global $dirbase, $urlbase, $quizMailHead, $eqdb;
 		// compose email
 		require_once($dirbase . 'app/views/quiz/usrview.php');
 		$vargs = $this->md->dbLoad($qid);
 		$qh = genQzHtml($vargs);
-		$args = array('from' => $adminEmail,
+		$args = array('from' => $vargs['admEmail'],
 	                  'subject' => "EQuiz: " . $t,
 	                 );
 		require_once($dirbase . 'app/emailer.php');
-		$eh = new EmailHelper($args);
+		$eh = new EmailHelper();
+		$msg = $eh->composeMsg($args);
 		$url = $urlbase . '/quiz/take/?id=' . $qid . '&pid=%d&token=%s';
 		foreach($states as $s) {
 			if (isset($s['token']) && 
@@ -493,12 +507,14 @@ Class quizController extends CController{
 			   ) {
 				$m = '<html><head>'. $htmlcss .'</head><body>';
 				$u = sprintf($url, $s['id'], $s['token']);
-				$m .= sprintf($quizMailHead, $u);
+				$m .= sprintf($quizMailHead, $u, $vargs['admin'], $vargs['admEmail']);
 				$m .= $qh[0];
 				$m .= genPinfoHtml($s['token'], $s['id']);
 				$m .= $qh[1];
 				$m .= '</body></html>';
-				$eh->sndMail(array('message' => $m, 'to' => $s['email']));
+				$msg->setTo($s['email']);
+				$msg->setBody($m, 'text/html');
+				$eh->sndMail($msg);
 				$this->md->dbUpdState($qid, $s['id']);
 			}
 		}
@@ -546,14 +562,21 @@ Class participController extends CController{
 
 	public function unSubAction() {
 		if(isset($_POST['email'])) {
-			global $eqdb, $adminEmail, $subEmailDomain;
+			global $eqdb, $subEmailDomain, $dbgEmail;
 			$email = $_POST['email'];
 			if(!($pos = strpos($email, '@'))) $email .= $subEmailDomain;
-			$sql = 'select id from partinfo where email like "'.$email.'"';
+			$sql = 'select id,tag from partinfo,subinfo where id=pid and email like "'.$email.'"';
 			$rc = $eqdb->dbq($sql);
-			if(!($rc&&($id=$rc->fetch(PDO::FETCH_COLUMN)))) {
-				die("Email: ".$email." is not registered!");
+			if(!$rc){
+				die("internal DB error contact ".$dbgEmail."!");
+			} else {
+				$rc = $rc->fetch(PDO::FETCH_OBJ);
+				//list($id, $tag)=$rc->fetch(PDO::FETCH_COLUMN);
+				if(!$rc->id) {
+					die("Email: ".$email." is not registered!");
+				}
 			}
+			$admEmail = $eqdb->dbq_admByTag($rc->tag)['email'];
 			$rip = $_SERVER['REMOTE_ADDR'];
 			global $dirbase, $urlbase;
 			require_once($dirbase . 'app/common.php');
@@ -561,17 +584,20 @@ Class participController extends CController{
 			$sql = 'insert into reginfo (token, email, op) values("'.$token.'", "'.$email.'", 2)';
 			$eqdb->dbe($sql);
 			// sending email
-			$args = array('from' => $adminEmail,
+			$args = array('from' => $admEmail,
 			              'subject' => "EQuiz: unsubscription",
 			             );
 			require_once($dirbase . 'app/emailer.php');
-			$eh = new EmailHelper($args);
+			$eh = new EmailHelper();
+			$msg = $eh->composeMsg($args);
 			$url = $urlbase . '/particip/confsub/?token='. $token .'&email='. $email;
 			$m =<<<EOV
 <p>Someone from IP:$rip is trying to remove your email address ($email) from eQuiz. Please use following link to confirm the unsubscription</p>
 <span>$url</span>
 EOV;
-			$eh->sndMail(array('message' => $m, 'to' => $email));
+			$msg->setTo($email);
+			$msg->setBody($m, 'text/html');
+			$eh->sndMail($msg);
 			echo '<p>Thank you for using eQuiz</p>';
 			echo '<p>A confirmation email has been sent to <b>'. $email .
 			     '</b>. Please check your email to complete the unsubscription.</p>';
@@ -584,13 +610,13 @@ EOV;
 
 	public function subscrbAction() {
 		// get available tag from quiz
-		global $eqdb, $adminEmail, $subEmailDomain;
+		global $eqdb, $dbgEmail, $subEmailDomain;
 		$tags = array();
 		foreach($eqdb->dbq_tags() as $tag) {
 			$tags[$tag] = $tag;
 		}
 		if(!is_array($tags) || count($tags)<1) {
-			die('No quiz available for subscription. Please contact <b>'. $adminEmail .'</b> for help.');
+			die('No quiz available for subscription. Please contact <b>'. $dbgEmail .'</b> for help.');
 		}
 		if(isset($_POST['email'])) {
 			$semail = $_POST['email'];
@@ -610,17 +636,20 @@ EOV;
 			$sql = 'insert into reginfo (token, name, email, tags, op) values("%s", "%s", "%s", "%s", 1)';
 			$eqdb->dbe(sprintf($sql, $token, $sname, $semail, $tagstr));
 			// sending email
-			$args = array('from' => $adminEmail,
+			$args = array('from' => $dbgEmail,
 			              'subject' => "EQuiz: subscription",
 			             );
 			require_once($dirbase . 'app/emailer.php');
-			$eh = new EmailHelper($args);
+			$eh = new EmailHelper();
+			$msg = $eh->composeMsg($args);
 			$url = $urlbase . '/particip/confsub/?token='. $token .'&email='. $semail;
 			$m =<<<EOV
 <p>$sname from IP:$rip registered this email address to receive eQuiz emails. Please use following link to confirm the subscription</p>
 <span>$url</span>
 EOV;
-			$eh->sndMail(array('message' => $m, 'to' => $semail));
+			$msg->setTo($semail);
+			$msg->setBody($m, 'text/html');
+			$eh->sndMail($msg);
 			echo '<p>Thank you <strong>'. $sname .
 			     '</strong> for subscribing eQuiz with tag: <i>' . $tagstr .'</i></p>';
 			echo '<p>A confirmation email has been sent to <b>'. $semail .
