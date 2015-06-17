@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="ISO-8859-1" ?>
+
+<!-- SIPp scenario: Basic call Terminated by orignating party. Originating party -->
+<scenario name="basic orig triggered by 3pcc">
+
+<recvCmd>
+<action>
+<!--<ereg regexp= ".*" search_in="hdr" header="Call-ID: " assign_to="1"/>-->
+</action>
+</recvCmd>
+
+
+<!-- send a INVITE message to remote side -->
+<send>
+<![CDATA[
+INVITE sip:[field1]@[remote_ip]:[remote_port] SIP/2.0
+Via: SIP/2.0/[transport] [local_ip]:[local_port]
+From:sipp <sip:[field0]@[local_ip]:[local_port]>;tag=[call_number]
+To:sut <sip:[field1]@[remote_ip]:[remote_port]>
+Call-ID: [call_id]
+Cseq: 1 INVITE
+Contact: sip:[field0]@[local_ip]:[local_port]
+Max-Forwards:70
+Subject: Performance Test
+Content-Type:application/sdp
+Content-Length:[len]
+
+v=0
+o=user1 53544765 2353687637 IN IP4 127.0.0.1
+s=-
+c=IN IP4 [media_ip]
+t=0 0
+m=audio [media_port] RTP/AVP 0
+a=rtpmap:0 PCMU/8000
+
+]]>
+</send>
+
+<!-- wait for 100 TRYING message -->
+<recv response="100">
+</recv>
+
+<!-- wait for 180 RING message -->
+<recv response="180">
+</recv>
+
+<!-- wait for 200 OK message -->
+<recv response="200">
+</recv>
+
+<!-- send a ACK message -->
+<send>
+<![CDATA[
+ACK sip:[field1]@[remote_ip]:[remote_port] SIP/2.0
+Via: SIP/2.0/[transport] [local_ip]:[local_port]
+From:sipp <sip:[field0]@[local_ip]:[local_port]>;tag=[call_number]
+To:sut <sip:[field1]@[remote_ip]:[remote_port]>[peer_tag_param]
+Call-ID: [call_id]
+Cseq:1 ACK
+Contact: sip:[field0]@[local_ip]:[local_port]
+Max-Forwards:70
+Subject: Performance Test
+Content-Length:0
+]]>
+</send>
+
+<!-- stop 3 seconds -->
+<pause milliseconds="3000">
+</pause>
+
+<!-- send BYE message -->
+<send retrans="500">
+<![CDATA[
+BYE sip:[field1]@[remote_ip]:[remote_port] SIP/2.0
+Via: SIP/2.0/[transport] [local_ip]:[local_port]
+From:sipp <sip:[field0]@[local_ip]:[local_port]>;tag=[call_number]
+To:sut <sip:[field1]@[remote_ip]:[remote_port]>[peer_tag_param]
+Call-ID: [call_id]
+Cseq:2 BYE
+Contact: sip:[field0]@[local_ip]:[local_port]
+Max-Forwards:70
+Subject: Performance Test
+Content-Length:0
+
+]]>
+</send>
+
+<!-- wait for 200 OK message -->
+<recv response="200">
+</recv>
+
+</scenario>
+

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="ISO-8859-1" ?>
+
+<!-- SIPp scenario: Basic call Terminated by orignating party. Originating party -->
+<scenario name="3pcc trigger">
+
+<sendCmd>
+<![CDATA[
+Call-ID: [call_id]
+]]>
+</sendCmd>
+
+</scenario>
+

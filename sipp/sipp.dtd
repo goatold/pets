@@ -1,0 +1,40 @@
+
+<!-- saved from url=(0040)http://sipp.sourceforge.net/doc/sipp.dtd -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=GBK"></head><body><pre style="word-wrap: break-word; white-space: pre-wrap;">&lt;!ELEMENT CallLengthRepartition EMPTY &gt;
+&lt;!ATTLIST CallLengthRepartition value CDATA #REQUIRED &gt;
+
+&lt;!ELEMENT ResponseTimeRepartition EMPTY &gt;
+&lt;!ATTLIST ResponseTimeRepartition value CDATA #REQUIRED &gt;
+
+&lt;!ELEMENT action ( ereg+ ) &gt;
+
+&lt;!ELEMENT ereg EMPTY &gt;
+&lt;!ATTLIST ereg assign_to CDATA #REQUIRED &gt;
+&lt;!ATTLIST ereg check_it (true|false) "false" &gt;
+&lt;!ATTLIST ereg header NMTOKEN #IMPLIED &gt;
+&lt;!ATTLIST ereg regexp CDATA #REQUIRED &gt;
+&lt;!ATTLIST ereg search_in (msg|hdr) "msg" &gt;
+
+&lt;!ELEMENT pause EMPTY &gt;
+&lt;!ATTLIST pause milliseconds NMTOKEN #IMPLIED &gt;
+
+&lt;!ELEMENT recv ( action? ) &gt;
+&lt;!ATTLIST recv crlf NMTOKEN #IMPLIED &gt;
+&lt;!ATTLIST recv optional (true|false) #IMPLIED &gt;
+&lt;!ATTLIST recv response NMTOKEN #IMPLIED &gt;
+&lt;!ATTLIST recv request NMTOKEN #IMPLIED &gt;
+&lt;!ATTLIST recv lost NMTOKEN #IMPLIED &gt;
+&lt;!ATTLIST recv rtd (true|false) #IMPLIED &gt;
+&lt;!ATTLIST recv rrs (true|false) #IMPLIED &gt;
+&lt;!ATTLIST recv start_rtd (true|false) #IMPLIED &gt;
+
+&lt;!ELEMENT scenario ( CallLengthRepartition | ResponseTimeRepartition | pause | recv | send )* &gt;
+&lt;!ATTLIST scenario name CDATA #REQUIRED &gt;
+
+&lt;!ELEMENT send ( #PCDATA ) &gt;
+&lt;!ATTLIST send retrans NMTOKEN #IMPLIED &gt;
+&lt;!ATTLIST send lost NMTOKEN #IMPLIED &gt;
+&lt;!ATTLIST send rtd (true|false) #IMPLIED &gt;
+&lt;!ATTLIST send start_rtd (true|false) #IMPLIED &gt;
+
+</pre></body></html>

@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="ISO-8859-1" ?>
+
+<!-- SIPp scenario: Basic call Terminated by orignating party. Originating party -->
+<scenario name="basiccall1">
+
+<!-- send a INVITE message to remote side -->
+<send>
+<![CDATA[
+INVITE sip:[field0][service]@[remote_ip]:[remote_port] SIP/2.0
+Via: SIP/2.0/[transport] [local_ip]:[local_port]
+From:sipp <sip:[field1][service]@[local_ip]:[local_port]>;tag=[call_number]
+To:[field0][service] <sip:[field0][service]@[remote_ip]:[remote_port]>
+Call-ID: [call_id]
+Cseq:1 INVITE
+Contact: sip:[field1][service]@[local_ip]:[local_port]
+Max-Forwards:70
+Subject: Performance Test
+MIME-Version: 1.0
+Content-Length: [len]
+Content-Type: multipart/mixed; boundary=unique-boundary-1
+
+--unique-boundary-1
+Content-Type: application/sdp
+
+v=0
+o=jg 2890844526 2890842807 IN IP4 [local_ip]
+s=-
+c=IN IP4 10.0.0.10
+t=0 0
+m=audio 6000 RTP/AVP 0
+a=rtpmap:0 PCMU/8000
+
+--unique-boundary-1
+Content-Type: application/ISUP; version=ansi00
+Content-Disposition: signal; handling=required
+
+{isupraw}01 00 20 00 0A 03 06 0D 03 90 90 A2 07 03 10 05 52 55 21 43 0A 07 73 13 05 53 55 31 15 3D 01 0E 00{isupraw}
+--unique-boundary-1
+
+
+]]>
+</send>
+
+<!-- wait for 100 TRYING message -->
+  <recv response="100" optional="true" /> 
+<!-- wait for 180 RING message -->
+  <recv response="180" optional="true" /> 
+<!-- wait for 183 message -->
+  <recv response="183" optional="true" /> 
+
+<!-- wait for 200 OK message -->
+<recv response="200"/>
+
+<!-- send a ACK message -->
+<send>
+<![CDATA[
+ACK sip:[field0][service]@[remote_ip]:[remote_port] SIP/2.0
+[last_Via:]
+[last_From:]
+[last_To:]
+Call-ID: [call_id]
+Cseq:1 ACK
+Contact: sip:[field1][service]@[local_ip]:[local_port]
+Max-Forwards:70
+Subject: Performance Test
+Content-Length:0
+]]>
+</send>
+
+<!-- stop 3 seconds -->
+<pause milliseconds="30000" />
+
+<!-- send BYE message -->
+<send retrans="500">
+<![CDATA[
+BYE sip:[field0][service]@[remote_ip]:[remote_port] SIP/2.0
+[last_Via:]
+[last_From:]
+[last_To:]
+Call-ID: [call_id]
+Cseq:2 BYE
+Contact: sip:[field1][service]@[local_ip]:[local_port]
+Max-Forwards:70
+Subject: Performance Test
+MIME-Version: 1.0
+Content-Length: [len]
+Content-Type: multipart/mixed; boundary=unique-boundary-1
+
+--unique-boundary-1
+Content-Type: application/sdp
+
+v=0
+o=- jpeterson 2890844526 2890842807 IN IP4 127.0.0.1
+s=-
+c=IN IP4 [media_ip]
+t=0 0
+m=audio 6000 RTP/AVP 0
+a=rtpmap:0 PCMU/8000
+
+--unique-boundary-1
+Content-Type: application/ISUP; version=ansi00
+Content-Disposition: signal; handling=required
+
+{isupraw}0c 02 00 03 87 90 a2{isupraw}
+--unique-boundary-1
+
+]]> 
+</send>
+
+<!-- wait for 200 OK message -->
+<recv response="200" crlf="true">
+</recv>
+
+</scenario>

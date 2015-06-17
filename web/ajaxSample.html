@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Ajax Sample</title>
+<script language="JavaScrip" type="text/javascript">
+function createXMLHttpRequest() {
+   try { return new XMLHttpRequest(); } catch(e) {}
+   try { return new ActiveXObject("Msxml2.XMLHTTP"); } catch (e) {}
+   alert("XMLHttpRequest not supported");
+   return null;
+}
+function xhReqTmout() {
+     xhReq.abort();
+     // Handle timeout situation, e.g. Retry or inform user.
+}
+var requestTimer = setTimeout(xhReqTmout, MAXIMUM_WAITING_TIME);
+function onXhrEvent() {
+	switch (xhReq.readyState != 4)  {
+		case 0: //request not initialized
+			break;
+		case 1: //server connection established
+		case 2: //request received 
+		case 3: //processing request 
+		case 4: //request finished and response is ready
+			onXhrRdy();
+	}
+}
+
+function onXhrRdy() {
+   
+   clearTimeout(requestTimer);
+   if (xhReq.status != 200)  {
+     // Handle error, e.g. Display error message on page
+     return;
+   }
+   var serverResponse = xhReq.responseText;
+}
+
+var xhReq = new XMLHttpRequest();
+xhReq.open("GET", "sumGet.phtml", false);
+xhReq.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+xhReq.onreadystatechange = onXhrEvent;
+xhReq.send("figure1=5&figure2=10");
+alert(serverResponse);
+</script>
+</head>
+
+<body></body>
+
+</html>
