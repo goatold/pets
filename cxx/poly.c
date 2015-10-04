@@ -15,7 +15,7 @@ Note:
     Above algorithm will exclude the internal points that eclosed by the external side of adjacent&tangent concave borders.
     So we need to remove the vertices of adjacent&tangent concave borders
 
-compile dbg ver: gcc -Ddbg -Wall poly.c -o poly
+compile dbg ver: gcc -g -Ddbg -Wall poly.c -o poly
 compile normal ver: g++ -O2 -lm poly.c
 
 test run:
@@ -24,7 +24,8 @@ test run:
     echo -e "48\nEEEEESENENNWWWNNNNEEEESENNNWWWWWWWWWWSEESSSSSSSW" | ./poly #result 44 
     echo -e "52\nEEEEESENENNWWWNNNNEEEESENNNWWWWWNNWSSWWWWSEESSSSSSSW" | ./poly #result 46 
 test on concave adjacent borders: echo -e "14\nSSEENWNENWNWSS" | ./poly #result 7
-
+width-1-concave test:
+    echo -e "60\nENESEEEEEENNESSEEEEENNWWNENNNNWWSSWWNENWWWWWWWWWSEESWWWSSSSS"|./poly #result 91
 Load test run: 
 {
 echo $((25000*4))
@@ -55,14 +56,16 @@ Note:
 void calcPoly(unsigned int n) {
     char preMv, mv, frstMv;
     // create array of coordinates of verteices
-    int* vx, vy;
+    int* vx, *vy;
     vx = malloc(sizeof(int)*(n+1));
     vy = malloc(sizeof(int)*(n+1));
     unsigned int vc = 0; // count of vertices
     preMv = 0;
-    unsigned int nm = n;
+    int nm = n;
     int x, y; // coordinates of the moving square
     x = y = 0;// start from (0,0)
+    int px, py, px2, py2; // temporarily holding coordinates of previous point
+    px = py = 0;// start from (0,0)
 /* as input will always be valid, ignore the check
     if (nm < 2) { // at least 2 movements to enclose the polygon
         putchar('0');
@@ -70,8 +73,207 @@ void calcPoly(unsigned int n) {
     }
 */
     // read movements and calculate vertexs coordinates and polygon area
-    while (nm > 0) {
-        mv = getc_unlocked(stdin);// read one movement
+    while (nm >= 0) {
+        if (nm == 0){ // back to start
+            mv = frstMv;
+        } else {
+            mv = fgetc(stdin);// read one movement
+            if (mv == EOF) break;
+        }
+        nm--;
+#ifdef dbg
+        printf("step%u preMv=%c, mv=%c, x=%d, y=%d ", n-nm, preMv, mv, x, y);
+#endif
+        if (preMv == 0) { //this is the first movement
+            preMv = mv;
+            frstMv = mv;
+#ifdef dbg
+            printf("first mv %c", mv);
+#endif
+        } else {
+            if (preMv != mv) { //direction changed so current point is vertex
+                // check width-1-concave and remove vertices, so the width-1-concave is flattened
+                if (vc > 1) { // at least 2 vertices to form a concave
+                    if (vc > 2) {// there are more vertices before current concave
+                        px = vx[vc-3];
+                        py = vy[vc-3];
+                    } else {
+                        px = py = 0; // refer the start point as the last point
+                    }                    
+                    // check concave of width 1
+                    if (preMv == 'W' && vx[vc-2] > px && vy[vc-2]-vy[vc-1] == 1) {
+#ifdef dbg
+printf("width 1 concave to East, ");
+#endif
+                        vc--;
+                        if (px > x) {
+                            if (vc > 2) {// there are more vertices before current concave
+                                px2 = vx[vc-3];
+                            } else {
+                                px2 = 0; // refer the start point as the last point
+                            }                    
+                            if (vx[vc-2] == px2) {// vertex before last point on the north
+                                vc--;
+                            }
+                            vx[vc-1] = px;
+                            vy[vc-1] = y;
+#ifdef dbg
+printf("later longer vertex[%d](%d,%d)", vc-1, vx[vc-1], vy[vc-1]);
+#endif
+                        } else if (x > px) {
+                            preMv = 'S';
+                            vx[vc-1] = x;
+#ifdef dbg
+printf("later shorter vertex[%d](%d,%d)", vc-1, vx[vc-1], vy[vc-1]);
+#endif
+                        } else if (x == px) {
+                            preMv = 'S';
+                            if (vc > 2) {// there are more vertices before current concave
+                                px2 = vx[vc-3];
+                            } else {
+                                px2 = 0; // refer the start point as the last point
+                            }                    
+                            if (vx[vc-2] == px2) {
+                                vc--;
+                            }
+                            vc--;
+#ifdef dbg
+printf("aligned: vertex[%d](%d,%d) removed", vc, vx[vc], vy[vc]);
+#endif
+                        }
+                    } else if (preMv == 'E' && vx[vc-2] < px && vy[vc-1]-vy[vc-2] == 1) {
+#ifdef dbg
+printf("width 1 concave to West, ");
+#endif
+                        vc--;
+                        if (px < x) {
+                            if (vc > 2) {// there are more vertices before current concave
+                                px2 = vx[vc-3];
+                            } else {
+                                px2 = 0; // refer the start point as the last point
+                            }                    
+                            if (vx[vc-2] == px2) {// vertex before last point on the north
+                                vc--;
+                            }
+                            vx[vc-1] = px;
+                            vy[vc-1] = y;
+#ifdef dbg
+printf("later longer vertex[%d](%d,%d)", vc-1, vx[vc-1], vy[vc-1]);
+#endif
+                        } else if (x < px) {
+                            preMv = 'N';
+                            vx[vc-1] = x;
+#ifdef dbg
+printf("later shorter vertex[%d](%d,%d)", vc-1, vx[vc-1], vy[vc-1]);
+#endif
+                        } else if (x == px) {
+                            preMv = 'N';
+                            if (vc > 2) {// there are more vertices before current concave
+                                px2 = vx[vc-3];
+                            } else {
+                                px2 = 0; // refer the start point as the last point
+                            }                    
+                            if (vx[vc-2] == px2) {// vertex before last point on the north
+                                vc--;
+                            }
+                            vc--;
+#ifdef dbg
+printf("aligned: vertex[%d](%d,%d) removed", vc, vx[vc], vy[vc]);
+#endif
+                        }
+                    } else if (preMv == 'S' && vy[vc-2] > py && vx[vc-1]-vx[vc-2] == 1) { // conave to North
+#ifdef dbg
+printf("width 1 concave to North, ");
+#endif
+                        vc--;
+                        if (py > y) { 
+                            if (vc > 2) {// there are more vertices before current concave
+                                py2 = vy[vc-3];
+                            } else {
+                                py2 = 0; // refer the start point as the last point
+                            }                    
+                            if (vy[vc-2] == py2) {// vertex before last point on the north
+                                vc--;
+                            }
+                            vx[vc-1] = x;
+                            vy[vc-1] = py;
+#ifdef dbg
+printf("later longer vertex[%d](%d,%d)", vc-1, vx[vc-1], vy[vc-1]);
+#endif
+                        } else if (y > py) {
+                            preMv = 'E';
+                            vy[vc-1] = y;
+#ifdef dbg
+printf("later shorter vertex[%d](%d,%d)", vc-1, vx[vc-1], vy[vc-1]);
+#endif
+                        } else if (y == py) {
+                            preMv = 'E';
+                            if (vc > 2) {// there are more vertices before current concave
+                                py2 = vy[vc-3];
+                            } else {
+                                py2 = 0; // refer the start point as the last point
+                            }                    
+                            if (vy[vc-2] == py2) {
+                                vc--;
+                            }
+                            vc--;
+#ifdef dbg
+printf("aligned: vertex[%d](%d,%d) removed", vc, vx[vc], vy[vc]);
+#endif
+                        }
+                    } else if (preMv == 'N' && vy[vc-2] < py && vx[vc-2]-vx[vc-1] == 1) {
+#ifdef dbg
+printf("width 1 concave to South, ");
+#endif
+                        vc--;
+                        if (py < y) { 
+                            if (vc > 2) {// there are more vertices before current concave
+                                py2 = vy[vc-3];
+                            } else {
+                                py2 = 0; // refer the start point as the last point
+                            }                    
+                            if (vy[vc-2] == py2) {// vertex before last point on the north
+                                vc--;
+                            }
+                            vx[vc-1] = x;
+                            vy[vc-1] = py;
+#ifdef dbg
+printf("later longer vertex[%d](%d,%d)", vc-1, vx[vc-1], vy[vc-1]);
+#endif
+                        } else if (y < py) {
+                            preMv = 'W';
+                            vy[vc-1] = y;
+#ifdef dbg
+printf("later shorter vertex[%d](%d,%d)", vc-1, vx[vc-1], vy[vc-1]);
+#endif
+                        } else if (y == py) {
+                            preMv = 'W';
+                            if (vc > 2) {// there are more vertices before current concave
+                                py2 = vy[vc-3];
+                            } else {
+                                py2 = 0; // refer the start point as the last point
+                            }                    
+                            if (vy[vc-2] == py2) {
+                                vc--;
+                            }
+                            vc--;
+#ifdef dbg
+printf("aligned: vertex[%d](%d,%d) removed", vc, vx[vc], vy[vc]);
+#endif
+                            }
+                    }
+                } // endof vc>1
+                if (preMv != mv) { //after concave check and possible direction change
+                    preMv = mv; // save current movement
+                    vx[vc] = x;
+                    vy[vc] = y;
+#ifdef dbg
+printf("vertex[%d](%d,%d)", vc, x, y);
+#endif
+                    vc++;
+                }
+            }//endof preMv != mv
+        }//endof first mv and vertex check
         switch (mv) {
         case 'E':
             x++;
@@ -85,67 +287,24 @@ void calcPoly(unsigned int n) {
         case 'N':
             y++;
             break;
-        case EOF:
-            nm = 0;
-            continue;
         default:
-            continue;
-        }
-        nm--;
-#ifdef dbg
-        printf("preMv=%c, mv= %c, x=%d, y=%d ", preMv, mv, x, y);
-#endif
-        if (preMv == 0) { //this is the first movement
-            preMv = mv;
-            frstMv = mv;
-#ifdef dbg
-            printf("first mv %c\n", mv);
-#endif
-            continue;
-        }
-        if (preMv != mv) { //direction changed so current point is vertex
-            // check and remove vertices
-            while (vc > 4) {
-                if (x == vx[vc-2] && y == vy[vc-2]) { // 0 width convex
-                    preMv = mv;
-                    vc -= 3;
-#ifdef dbg
-        printf("current vertex ignored, last 3 vertices removed:(%d,%d),(%d,%d),(%d,%d)\n", vx[vc+3], vy[vc+3], vx[vc+2], vy[vc+2], vx[vc+1], vy[vc+1]);
-#endif
-                    continue;
-                }
-                if (preMv == 'W' && vy[vc-1]-vy[vc] == 1) { // conave to East
-                    if (vx[vc-2] > x) {
-                        //remove 2 vertices and update 3rd last vertex
-                        vc -= 2;
-                        vy[vc] = y;
-                        vc++;
-                        vx[vc] = x;
-                        vy[vc] = y;
-                    } //todo: other cases
-                } // todo: concave to other directions
-#ifdef dbg
-            printf("vertex(%d,%d) ", x, y);
-#endif
-            if (prv) { // this is not the 1st vertex
-                polyArea += vx*py - vy*px;
-            } else { // this is the first vertex
-                prv = 1;
-            }
-            vx = x;
-            vy = y;
-            preMv = mv; // save current movement
+            break;
         }
 #ifdef dbg
-        printf("\n");
+printf("\n");
 #endif
-    }
+
+    } // end of all movements
 /* as input will always be valid, ignore the check
     if (x!=0 || y!=0) { // polygon not enclosed
         putchar('0');
         return;
     }
 */
+    int i;
+    for (i=0;i<vc-1;i++) {
+        polyArea += vx[i]*vy[i+1] - vy[i]*vx[i+1];
+    }
     printf("%u\n", polyArea/2);
 }
 
