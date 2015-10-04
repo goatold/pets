@@ -23,15 +23,15 @@ test run:
     echo -e "32\nSNEEESNEEWWNNEENSWWNNWSSWWNNSSSS" | ./poly                 #result 8
     echo -e "48\nEEEEESENENNWWWNNNNEEEESENNNWWWWWWWWWWSEESSSSSSSW" | ./poly #result 44 
     echo -e "52\nEEEEESENENNWWWNNNNEEEESENNNWWWWWNNWSSWWWWSEESSSSSSSW" | ./poly #result 46 
-test on concave adjacent borders: echo -e "14\nSSEENWNENWNWSS" | ./poly #result 7
-width-1-concave test:
+concave adjacent borders, width-1-concave test:
+    echo -e "14\nSSEENWNENWNWSS" | ./poly #result 7
     echo -e "60\nENESEEEEEENNESSEEEEENNWWNENNNNWWSSWWNENWWWWWWWWWSEESWWWSSSSS"|./poly #result 91
 Load test run: 
 {
 echo $((25000*4))
 printf 'E%.0s' {1..25000};printf 'N%.0s' {1..25000};printf 'W%.0s' {1..25000};printf 'S%.0s' {1..25000}
 echo
-}|./poly # result 25000*25000 = 625000000
+}|./a.out # result 25000*25000 = 625000000
 {
 echo $((24999*4))
 printf 'EN%.0s' {1..12500};printf 'WN%.0s' {2..12500};printf 'WS%.0s' {1..12500};printf 'ES%.0s' {2..12500}; echo;
@@ -50,8 +50,8 @@ Read movements sequence from input and calculate vertexs coordinates and polygon
 Input: n is the number of movements
 Output: no return value, just print the result to stdout
 Note:
-    - only the turning points (change of direction) is the vertex
-    - start/end point is not checked for vertex. Since it's (0,0), we are safe to ignore it.
+    - only the turning points (change of direction) are the vertices
+    - vertices of width-1-concave will be checked and removed
 */
 void calcPoly(unsigned int n) {
     char preMv, mv, frstMv;
@@ -107,13 +107,15 @@ printf("width 1 concave to East, ");
 #endif
                         vc--;
                         if (px > x) {
-                            if (vc > 2) {// there are more vertices before current concave
-                                px2 = vx[vc-3];
-                            } else {
-                                px2 = 0; // refer the start point as the last point
-                            }                    
-                            if (vx[vc-2] == px2) {// vertex before last point on the north
-                                vc--;
+                            if(vc > 1){ //more than 1 vertices before current point
+                                if (vc > 2) {//more than 2 vertices before current point
+                                    px2 = vx[vc-3];
+                                } else {
+                                    px2 = 0; // refer the start point as the last point
+                                }                    
+                                if (vx[vc-2] == px2) {// last 2 vertices on the same line
+                                    vc--;
+                                }
                             }
                             vx[vc-1] = px;
                             vy[vc-1] = y;
@@ -128,13 +130,15 @@ printf("later shorter vertex[%d](%d,%d)", vc-1, vx[vc-1], vy[vc-1]);
 #endif
                         } else if (x == px) {
                             preMv = 'S';
-                            if (vc > 2) {// there are more vertices before current concave
-                                px2 = vx[vc-3];
-                            } else {
-                                px2 = 0; // refer the start point as the last point
-                            }                    
-                            if (vx[vc-2] == px2) {
-                                vc--;
+                            if(vc > 1){ //more than 1 vertices before current point
+                                if (vc > 2) {//more than 2 vertices before current point
+                                    px2 = vx[vc-3];
+                                } else {
+                                    px2 = 0; // refer the start point as the last point
+                                }                    
+                                if (vx[vc-2] == px2) {// last 2 vertices on the same line
+                                    vc--;
+                                }
                             }
                             vc--;
 #ifdef dbg
@@ -147,13 +151,15 @@ printf("width 1 concave to West, ");
 #endif
                         vc--;
                         if (px < x) {
-                            if (vc > 2) {// there are more vertices before current concave
-                                px2 = vx[vc-3];
-                            } else {
-                                px2 = 0; // refer the start point as the last point
-                            }                    
-                            if (vx[vc-2] == px2) {// vertex before last point on the north
-                                vc--;
+                            if(vc > 1){ //more than 1 vertices before current point
+                                if (vc > 2) {//more than 2 vertices before current point
+                                    px2 = vx[vc-3];
+                                } else {
+                                    px2 = 0; // refer the start point as the last point
+                                }                    
+                                if (vx[vc-2] == px2) {// last 2 vertices on the same line
+                                    vc--;
+                                }
                             }
                             vx[vc-1] = px;
                             vy[vc-1] = y;
@@ -168,13 +174,15 @@ printf("later shorter vertex[%d](%d,%d)", vc-1, vx[vc-1], vy[vc-1]);
 #endif
                         } else if (x == px) {
                             preMv = 'N';
-                            if (vc > 2) {// there are more vertices before current concave
-                                px2 = vx[vc-3];
-                            } else {
-                                px2 = 0; // refer the start point as the last point
-                            }                    
-                            if (vx[vc-2] == px2) {// vertex before last point on the north
-                                vc--;
+                            if(vc > 1){ //more than 1 vertices before current point
+                                if (vc > 2) {//more than 2 vertices before current point
+                                    px2 = vx[vc-3];
+                                } else {
+                                    px2 = 0; // refer the start point as the last point
+                                }                    
+                                if (vx[vc-2] == px2) {// last 2 vertices on the same line
+                                    vc--;
+                                }
                             }
                             vc--;
 #ifdef dbg
@@ -187,13 +195,15 @@ printf("width 1 concave to North, ");
 #endif
                         vc--;
                         if (py > y) { 
-                            if (vc > 2) {// there are more vertices before current concave
-                                py2 = vy[vc-3];
-                            } else {
-                                py2 = 0; // refer the start point as the last point
-                            }                    
-                            if (vy[vc-2] == py2) {// vertex before last point on the north
-                                vc--;
+                            if(vc > 1){ //more than 1 vertices before current point
+                                if (vc > 2) {//more than 2 vertices before current point
+                                    py2 = vy[vc-3];
+                                } else {
+                                    py2 = 0; // refer the start point as the last point
+                                }                    
+                                if (vy[vc-2] == py2) {// last 2 vertices on the same line
+                                    vc--;
+                                }
                             }
                             vx[vc-1] = x;
                             vy[vc-1] = py;
@@ -208,13 +218,15 @@ printf("later shorter vertex[%d](%d,%d)", vc-1, vx[vc-1], vy[vc-1]);
 #endif
                         } else if (y == py) {
                             preMv = 'E';
-                            if (vc > 2) {// there are more vertices before current concave
-                                py2 = vy[vc-3];
-                            } else {
-                                py2 = 0; // refer the start point as the last point
-                            }                    
-                            if (vy[vc-2] == py2) {
-                                vc--;
+                            if(vc > 1){ //more than 1 vertices before current point
+                                if (vc > 2) {//more than 2 vertices before current point
+                                    py2 = vy[vc-3];
+                                } else {
+                                    py2 = 0; // refer the start point as the last point
+                                }                    
+                                if (vy[vc-2] == py2) {// last 2 vertices on the same line
+                                    vc--;
+                                }
                             }
                             vc--;
 #ifdef dbg
@@ -227,13 +239,15 @@ printf("width 1 concave to South, ");
 #endif
                         vc--;
                         if (py < y) { 
-                            if (vc > 2) {// there are more vertices before current concave
-                                py2 = vy[vc-3];
-                            } else {
-                                py2 = 0; // refer the start point as the last point
-                            }                    
-                            if (vy[vc-2] == py2) {// vertex before last point on the north
-                                vc--;
+                            if(vc > 1){ //more than 1 vertices before current point
+                                if (vc > 2) {//more than 2 vertices before current point
+                                    py2 = vy[vc-3];
+                                } else {
+                                    py2 = 0; // refer the start point as the last point
+                                }                    
+                                if (vy[vc-2] == py2) {// last 2 vertices on the same line
+                                    vc--;
+                                }
                             }
                             vx[vc-1] = x;
                             vy[vc-1] = py;
@@ -248,13 +262,15 @@ printf("later shorter vertex[%d](%d,%d)", vc-1, vx[vc-1], vy[vc-1]);
 #endif
                         } else if (y == py) {
                             preMv = 'W';
-                            if (vc > 2) {// there are more vertices before current concave
-                                py2 = vy[vc-3];
-                            } else {
-                                py2 = 0; // refer the start point as the last point
-                            }                    
-                            if (vy[vc-2] == py2) {
-                                vc--;
+                            if(vc > 1){ //more than 1 vertices before current point
+                                if (vc > 2) {//more than 2 vertices before current point
+                                    py2 = vy[vc-3];
+                                } else {
+                                    py2 = 0; // refer the start point as the last point
+                                }                    
+                                if (vy[vc-2] == py2) {// last 2 vertices on the same line
+                                    vc--;
+                                }
                             }
                             vc--;
 #ifdef dbg
