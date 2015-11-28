@@ -75,7 +75,7 @@ void startNewGame(Game* aGame) {
 		aGame->computerTurn = true;
 		printf("Computer first!\n");
 	}
-	
+
 	aGame->round = 0;
 	aGame->over = false;
 	displaySlate(aGame->gameSlate);
@@ -171,7 +171,7 @@ bool evaluateLine(LineState* lstate, MoveScore* score) {
 #ifdef DEBUG
 		printf("I must block this line\n");
 #endif
-		score->saving = true;		 
+		score->saving = true;
 	}
 	if (lstate->occup_computer == 0) {
 #ifdef DEBUG
@@ -182,7 +182,7 @@ bool evaluateLine(LineState* lstate, MoveScore* score) {
 #ifdef DEBUG
 			printf("blocking this line\n");
 #endif
-			score->block++;	
+			score->block++;
 		}
 	} else {
 		if (lstate->occup_player == 0) {
@@ -260,7 +260,7 @@ void playGame(Game* aGame) {
 			aGame->computerTurn = true;
 		}
 		displaySlate(aGame->gameSlate);
-	}	
+	}
 }
 
 // iterate all possible moves and play the best move
