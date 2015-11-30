@@ -15,6 +15,7 @@ desth=(\
 [tp2]=root@172.17.3.110 \
 [ccp14]=root@172.17.3.140 \
 )
+rcmds=( ssh sftp scp )
 
 lstun() {
 	tl=$(pgrep -f -l 'ssh.*-D' | sed -e 's/.*\-D \+\([0-9]\+\).* \(.\+@[0-9\.]\+\)/\1 \2/')
@@ -34,19 +35,34 @@ setuptun() {
 }
 
 conndst() {
-	[[ -n "$1" ]] && port=$1 || {
-		select p in $(pgrep -f -l 'ssh.*-D' | sed -e 's/.*\-D \+\([0-9]\+\).*/\1/'); do
-			port=$p;
-			break;
-		done
+	[[ -n "$1" ]] && { cmd=$1; shift; } || {
+		echo "Command:"
+		select cmd in ${rcmds[@]}; { break; };
 	}
-	[[ -n "$2" ]] && dst=$2 || {
-		select d in ${desth[@]}; do
-			dst=$d;
-			break;
-		done
+	[[ -n "$1" ]] && { port=$1; shift; } || {
+		echo "Proxy port:"
+		select port in $(pgrep -f -l 'ssh.*-D' | sed -e 's/.*\-D \+\([0-9]\+\).*/\1/'); { break; };
 	}
-	[[ "$withscr" ]] && [[ "$withscr" =~ y|Y ]] && { scr="screen -t '$port::$dst' --"; } || { scr=; }
-	echo "connecting to $dst via $port $scr"
-	$scr ssh -o ProxyCommand="'nc -x 127.0.0.1:$port %h %p'" $dst
+
+	[[ -n "$1" ]] && { rmh=$1; shift; } || {
+		echo "Remote host:"
+		select rmh in ${desth[@]}; { break; };
+	}
+
+	if [[ $cmd = scp ]]; then
+		echo -n "copy from: ";
+		read from;
+		echo -n "to: ";
+		read to;
+		cpdirs=( "${rmh}:${from} ${to}" "$from ${rmh}:${to}" )
+		echo -n "direction: ";
+		select fromto in "${cpdirs[@]}"; { break; };
+		echo "scp -o ProxyCommand='nc -x 127.0.0.1:$port %h %p' ${fromto}"
+		scp -o ProxyCommand="nc -x 127.0.0.1:$port %h %p" ${fromto}
+	else
+		[[ "$withscr" ]] && [[ "$withscr" =~ y|Y ]] && { scr="screen -t '$port::$rmh' --"; } || { scr=; }
+		echo "$scr $cmd -o ProxyCommand='nc -x 127.0.0.1:$port %h %p' $rmh $@"
+		$scr $cmd -o ProxyCommand="nc -x 127.0.0.1:$port %h %p" $rmh $@
+	fi
 }
+
