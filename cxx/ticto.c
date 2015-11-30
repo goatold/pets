@@ -275,11 +275,14 @@ void computerPlay(Game* aGame) {
 			playMove(aGame, COMPUTER_PAWN, i);
 			return;
 		}
-		if ((!bestScore.saving && score.saving) ||
-			score.extent > bestScore.extent ||
-			(score.extent == bestScore.extent && score.block > bestScore.block) ||
-			(score.extent == bestScore.extent && score.block == bestScore.block &&
-			 score.increment > bestScore.increment) ) {
+		if ((score.saving) ||
+			(!bestScore.saving && (
+				score.extent > bestScore.extent ||
+				(score.extent == bestScore.extent && score.block > bestScore.block) ||
+				(score.extent == bestScore.extent && score.block == bestScore.block &&
+				 score.increment > bestScore.increment)
+				)
+			) ) {
 			bestScore = score;
 #ifdef DEBUG
 			printf("found better score at %u: %u,%u,%u,%u\n",
