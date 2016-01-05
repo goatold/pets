@@ -60,7 +60,10 @@ conndst() {
 		echo "scp -o ProxyCommand='nc -x 127.0.0.1:$port %h %p' ${fromto}"
 		scp -o ProxyCommand="nc -x 127.0.0.1:$port %h %p" ${fromto}
 	else
-		[[ "$withscr" ]] && [[ "$withscr" =~ y|Y ]] && { scr="screen -t '$port::$rmh' --"; } || { scr=; }
+# screen action according to env variable: $STY Alternate socket name.
+# If screen is invoked, and the environment variable STY is set, then it
+# creates only a window in the running screen session rather than starting a new session. 
+        [[ -n $STY ]] && { scr="screen -t '$port::$rmh' --"; } || { scr=; }
 		echo "$scr $cmd -o ProxyCommand='nc -x 127.0.0.1:$port %h %p' $rmh $@"
 		$scr $cmd -o ProxyCommand="nc -x 127.0.0.1:$port %h %p" $rmh $@
 	fi
