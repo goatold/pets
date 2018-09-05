@@ -7,13 +7,16 @@ def getDivisors(n):
         return [1];
     if (n == 2):
         return [1, 2];
-    r1 = list([1])
-    r2 = list([n])
-    for i in range(2, int(math.sqrt(n)+1)):
+    r1 = list([1]) # lower half of divisors
+    r2 = list([n]) # higher half of divisors
+    # from 2 to sqrt(n) inclusive
+    i = 2
+    while (i * i <= n):
         if (n % i == 0):
             r1.append(i)
             if (i != n/i):
                 r2.insert(0, n/i)
+        i += 1
     return r1 + r2
 
 if __name__ == '__main__':
