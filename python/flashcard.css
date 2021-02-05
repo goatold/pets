@@ -1,0 +1,116 @@
+body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    align-content: center;
+}
+
+.container {
+    position: relative;
+    margin-top: 16px;
+    margin-bottom: 16px;
+}
+
+.watermark {
+    position: absolute;
+    top: 40px;
+    width: 100%;
+    font-family: cursive;
+    font-size: 200px;
+    opacity: 5%;
+    z-index:1;
+    text-align: center;
+    transform:rotate(345deg);
+}
+
+.card {
+    position: absolute;
+    color: inherit;
+    cursor: pointer;
+    width: 1420px;
+    min-width: 1420px;
+    height: 412px;
+    min-height: 412px;
+    display: flex;
+    flex-direction: row;
+    position: relative;
+    font-family: Arial, Helvetica, sans-serif;
+    justify-content: center;
+    align-items: center;
+}
+
+.front,
+.back {
+    border-radius: 6px;
+    background-image: url(cardFrame.png);
+    background-origin: border-box;
+    background-position: center;
+    background-clip: border-box;
+    background-attachment: local;
+    background-size: cover;
+    background-repeat: no-repeat;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    align-content: center;
+    height: 100%;
+    width: 50%;
+    padding-top: 20px;
+    overflow: auto;
+    text-overflow: ellipsis;
+}
+
+/*
+style applicable when print
+*/
+@media print {
+    .front, .back {
+        outline-style: dotted;
+        display: flex;
+    }
+    .container {
+        position: relative;
+        margin-bottom: 10px;
+    }   
+    div:nth-child(4n+0) {
+        margin-bottom: 279px;
+        break-after: page;
+    }
+}
+
+@media screen {
+    .back {
+        display: none;
+    }
+    .watermark {
+        display: none;
+    }
+    .container {
+        position: relative;
+        margin-top: 36px;
+        margin-bottom: 36px;
+    }
+}
+
+h1 {
+    text-align: center;
+    width: calc(95% - 2rem);;
+    font-size: 48px;
+    font-weight: 500;
+    padding: 20px, 10px, 20px, 10px;
+}
+
+ul, p {
+    font-weight: 400;
+    width: calc(90% - 2rem);;
+    padding-left: 20px;
+    font-size: 24px;
+    margin: auto;
+    line-height: 1em;
+}
+
+.sideword {
+    font-size: 24px;
+}
