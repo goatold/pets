@@ -16,7 +16,6 @@ def findMinTrial(top, n, kntbl):
     if n < 1:
         n = 1
     if kntbl[top-1][n-1][0] > 0:
-        print("(%u, %u) known "%(top, n), kntbl[top-1][n-1])
         return kntbl[top-1][n-1][0]
     # the most conservative solutoion is to start form 1
     # and try each height up to top
@@ -47,7 +46,7 @@ def findMinTrial(top, n, kntbl):
     if testk < testMin:
         bestk = top
         testMin = testk
-    print("best start drop at %u and minT(%u, %u)=%u"%(bestk, top, n, testMin))
+    print(f"best start drop at {bestk} and minT({top}, {n})={testMin}")
     kntbl[top-1][n-1] = [testMin, bestk]
     return testMin
 
@@ -65,6 +64,5 @@ if __name__ == '__main__':
     for i in range(1, s+1):
         k = kntbl[top-1][1][1]
         t+=k
-        print(i, " try at %u/%u n(%u)" %
-              (t, k, kntbl[top-1][0][1]))
+        print(f"{i} try at {t}/{k} n({kntbl[top-1][0][1]})")
         top -= k 
