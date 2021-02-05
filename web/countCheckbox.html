@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <style>
+        .inpro {
+            background-color: rgb(160, 240, 160);
+        }
+
+        .compl {
+            background-color: rgb(255, 255, 200);
+        }
+    </style>
+</head>
+
+<body>
+
+
+    <p>Minimum 10 books</p>
+    <p>Currently planned <span id="plancnt"></span></p>
+    <p class="inpro">In progress <span id="progcnt"></span></p>
+    <p class="compl">Complete <span id="complcnt"></span></p>
+
+    <ul style="text-align: left;">
+        <li>
+            <label><input name="books" type="checkbox" value="reading" />
+                Science in the Soul -- Selected Writings of A Passionate Rationalist by
+                Dawkins, Richard</label>
+        </li>
+        <li>
+            <label><input name="books" type="checkbox" value="reading" /> The Body -- A
+                Guide for Occupants by Bryson, Bill</label>
+        </li>
+        <li>数学故事系列:&nbsp;</li>
+        <ul>
+            <li>
+                <label><input checked name="books" type="checkbox" />
+                    《否定中的肯定》</label>
+            </li>
+            <li>
+                <label><input checked name="books" type="checkbox" />
+                    《偶然中的必然》</label>
+            </li>
+            <li>
+                <label><input name="books" type="checkbox" value="reading" />
+                    《抽象中的形象》</label>
+            </li>
+            <li>
+                <label><input name="books" type="checkbox" />
+                    《无限中的有限》</label>
+            </li>
+            <li>
+                <label><input name="books" type="checkbox" />
+                    《未知中的已知》</label>
+            </li>
+            <li>
+                <label><input name="books" type="checkbox" />
+                    《变量中的常量》</label>
+            </li>
+        </ul>
+        <li>
+            <label><input name="books" type="checkbox" />
+                One, Two, Three...Infinity: Facts and Speculations of Science by George
+                Gamow</label>
+        </li>
+        <li>To be continued ...</li>
+    </ul>
+    <p></p>
+
+    <script type="text/javascript">
+        showCounts();
+
+        function showCounts() {
+            var prog = document.querySelectorAll('input[name=books][value=reading]');
+            var compl = document.querySelectorAll('input[name=books]:checked');
+            var i;
+            document.getElementById('plancnt').innerHTML = document.querySelectorAll('input[name=books]').length;
+            document.getElementById('progcnt').innerHTML = prog.length;
+            document.getElementById('complcnt').innerHTML = compl.length;
+            for (i = 0; i < prog.length; ++i) {
+                prog[i].parentElement.className = "inpro";
+            }
+            for (i = 0; i < compl.length; ++i) {
+                compl[i].parentElement.className = "compl";
+            }
+        }
+    </script>
+
+</body>
+
+</html>
